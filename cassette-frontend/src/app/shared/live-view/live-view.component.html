@@ -1,0 +1,17 @@
+<h1>live view</h1>
+<!-- <div id="wrapper" style="grid-template-rows: repeat({{n_vertical}}); grid-template-columns: repeat({{n_horizontal}});">
+    <div class="cell" *ngFor="let index of [].constructor(n_horizontal*n_vertical); let j = index">
+</div> -->
+<!-- <div class="live_view_wrapper">
+    <div class = "row-wrapper">
+        <div class = "flex-container" *ngFor="let index of [].constructor(n_vertical); let i = index">
+            <div class = "flex-item" *ngFor="let index of [].constructor(n_horizontal); let j = index">
+        </div>
+    </div>
+</div> -->
+<div id="wrapper" (resized)="onResized($event)">
+<mat-grid-list id="matrix" cols="{{n_horizontal}}" rowHeight="1:1" style="width: {{width}}px" gutterSize="{{gutter_size}}px">
+    <mat-grid-tile *ngFor="let index of [].constructor(n_vertical*n_horizontal); let i = index">{{index}}</mat-grid-tile>
+</mat-grid-list>
+</div>
+

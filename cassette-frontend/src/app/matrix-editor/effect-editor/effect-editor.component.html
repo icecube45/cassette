@@ -1,0 +1,54 @@
+
+<live-view [n_vertical]=10 [n_horizontal]=30></live-view>
+<mat-card>
+    <mat-card-title>
+        Channel {{this.channel_id}}
+    </mat-card-title>
+    <mat-card-content>
+    <mat-form-field appearance="fill">
+        <mat-label>{{currentEffect.name}}</mat-label>
+        <mat-select [(ngModel)]="currentEffect" name="itrEffect">
+            <mat-option *ngFor="let itrEffect of effects" [value] = "itrEffect">{{itrEffect.name}}</mat-option>
+        </mat-select>
+    </mat-form-field>
+    <mat-card>
+        <mat-card-title>
+            {{currentEffect.name ? currentEffect.name : currentEffect ? "name is undefined" : "currentEffect is undefined"}}
+        </mat-card-title>
+        <mat-card-content>
+            <div *ngFor="let effectOption of currentEffect.options">
+                <div class="option-container">
+                    <label>{{effectOption.name}}</label>
+                    <label *ngIf="effectOption.type === EffectOptionType.Analog">{{$any(effectOption).value}}</label>
+                    <mat-form-field appearance="fill"
+                        *ngIf="effectOption.type === EffectOptionType.Select">
+                        <mat-select [(value)]="$any(effectOption).value">
+                            <mat-option *ngFor="let option of $any(effectOption).options" [value]="option">{{option}}</mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                    <button mat-button class="color_swatch" *ngIf="effectOption.type === EffectOptionType.Color" (click)="openColorPicker($any(effectOption))" [style.background]="$any(effectOption).value"></button>
+                    <mat-checkbox
+                    [(ngModel)]="$any(effectOption).value"
+                    *ngIf="effectOption.type === EffectOptionType.Boolean">
+                    </mat-checkbox>
+                
+                </div>
+                <mat-slider
+                    thumbLabel
+                    [displayWith]="formatLabel"
+                    [min]="$any(effectOption).min"
+                    [max]="$any(effectOption).max"
+                    [step]="$any(effectOption).step"
+                    [(value)]="$any(effectOption).value"
+                    *ngIf="effectOption.type === EffectOptionType.Analog">
+                ></mat-slider>
+            </div>
+        </mat-card-content>
+    </mat-card>
+    <mat-card-actions align=end>
+        <button mat-button [routerLink]="['../../..']" style="background-color: #9fa8da">BACK</button>
+        <button mat-button (click)="onRevert()" style="background-color:#ffab91">REVERT</button>
+        <button mat-button (click)="onApply()" style="background-color: #a5d6a7">APPLY</button>
+    </mat-card-actions>
+    </mat-card-content>
+</mat-card>
