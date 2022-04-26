@@ -3,3 +3,5 @@ target
 /.idea
 /logs
 /RUNNING_PID
+
+/.vscode
