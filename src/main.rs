@@ -3,11 +3,15 @@
 use axum::{
     body::Bytes,
     error_handling::HandleErrorLayer,
-    extract::{ContentLengthLimit, Path},
+    extract::{ContentLengthLimit, Path,
+        ws::{Message, WebSocket, WebSocketUpgrade},
+        TypedHeader
+    },
     http::StatusCode,
     response::IntoResponse,
-    routing::{post},
-    Router,
+    routing::{get, post},
+    Router
+    
 };
 use std::{
     borrow::Cow,
@@ -46,6 +50,13 @@ async fn main() {
                 move |path, body| kv_set(path, body, Arc::clone(&shared_state))
             }),
         )
+        .route(
+            "/ws",
+            get({
+                let shared_state = Arc::clone(&state);
+                move |ws, user_agent| ws_handler(ws, user_agent, Arc::clone(&shared_state))
+            }),
+        )
         .layer(
             ServiceBuilder::new()
                 // Handle errors from middleware
@@ -80,6 +91,60 @@ async fn main() {
 #[derive(Default)]
 struct State {
     db: HashMap<String, Bytes>,
+}
+
+async fn ws_handler(
+    ws: WebSocketUpgrade, 
+    user_agent: Option<TypedHeader<headers::UserAgent>>, 
+    state: Arc<Mutex<State>>
+) -> impl IntoResponse {
+    if let Some(TypedHeader(user_agent)) = user_agent {
+        println!("`{}` connected", user_agent.as_str());
+    }
+    ws.on_upgrade({
+        |ws| handle_socket(ws, state)
+    })
+    
+}
+
+async fn handle_socket(mut socket: WebSocket, state: Arc<Mutex<State>>) {
+    if let Some(msg) = socket.recv().await {
+        if let Ok(msg) = msg {
+            match msg {
+                Message::Text(t) => {
+                    println!("client sent str: {:?}", t);
+                }
+                Message::Binary(_) => {
+                    println!("client sent binary data");
+                }
+                Message::Ping(_) => {
+                    println!("socket ping");
+                }
+                Message::Pong(_) => {
+                    println!("socket pong");
+                }
+                Message::Close(_) => {
+                    println!("client disconnected");
+                    return;
+                }
+            }
+        } else {
+            println!("client disconnected");
+            return;
+        }
+    }
+
+    loop {
+        
+        let state = Arc::clone(&state);
+        let message = state.lock().unwrap().db.len().to_string();
+        if socket.send(Message::Text(String::from(message))).await.is_err()
+        {
+            println!("client disconnected");
+            return;
+        }
+        tokio::time::sleep(std::time::Duration::from_secs(3)).await;
+    }
 }
 
 async fn kv_set(Path(key): Path<String>, ContentLengthLimit(bytes): ContentLengthLimit<Bytes, { 1024 * 5_000 }>, state: Arc<Mutex<State>>) {
