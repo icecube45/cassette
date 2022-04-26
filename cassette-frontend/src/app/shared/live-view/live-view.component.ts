@@ -1,5 +1,7 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { ResizedEvent } from 'angular-resize-event';
+import { Pixel } from 'src/app/pixel';
+import { MatrixLiveViewService } from 'src/app/services/matrix-live-view.service';
 
 @Component({
   selector: 'live-view',
@@ -13,10 +15,17 @@ export class LiveViewComponent implements OnInit {
     width: number = 0;
     gutter_size: number = 2;
 
+    pixels: Pixel[] = [];
 
-    constructor() { }
+
+    constructor(private matrixService: MatrixLiveViewService) { }
 
     ngOnInit(): void {
+        this.matrixService.getPixels().subscribe(pixels => {
+            // set mat grid tiles to pixel colors
+            // for pixel of pixels
+            this.pixels = pixels;
+        });
 
     }
 

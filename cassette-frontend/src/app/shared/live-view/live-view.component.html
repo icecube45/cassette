@@ -9,9 +9,9 @@
         </div>
     </div>
 </div> -->
+
 <div id="wrapper" (resized)="onResized($event)">
 <mat-grid-list id="matrix" cols="{{n_horizontal}}" rowHeight="1:1" style="width: {{width}}px" gutterSize="{{gutter_size}}px">
-    <mat-grid-tile *ngFor="let index of [].constructor(n_vertical*n_horizontal); let i = index">{{index}}</mat-grid-tile>
+    <mat-grid-tile *ngFor="let index of [].constructor(n_vertical*n_horizontal); let i = index" [style.background] = "pixels[i].getHex()">{{index}}</mat-grid-tile>
 </mat-grid-list>
 </div>
-
