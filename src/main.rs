@@ -1,16 +1,9 @@
 //! Simple in-memory key/value store showing features of axum.
-//!
-//! Run with:
-//!
-//! ```not_rust
-//! cargo run -p example-key-value-store
-//! ```
 
 use axum::{
     body::Bytes,
     error_handling::HandleErrorLayer,
-    extract::{ContentLengthLimit, Extension, Path},
-    handler::Handler,
+    extract::{ContentLengthLimit, Path},
     http::StatusCode,
     response::IntoResponse,
     routing::{post},
@@ -24,9 +17,7 @@ use std::{
     time::Duration,
 };
 use tower::{BoxError, ServiceBuilder};
-use tower_http::{
-    auth::RequireAuthorizationLayer, compression::CompressionLayer, trace::TraceLayer,
-};
+use tower_http::{trace::TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 use std::thread;
@@ -69,11 +60,10 @@ async fn main() {
     //spawn thread that will periodically print the shared state
     thread::spawn(move || 
         {
-            let ten_millis = Duration::from_millis(100);
-            let shared_state = Arc::clone(&state);
+            let one_sec = Duration::from_secs(1);
             loop 
             {
-                thread::sleep(ten_millis);
+                thread::sleep(one_sec);
                 println!("{:?}", state.lock().unwrap().db);
             }
         });
