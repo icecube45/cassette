@@ -11,7 +11,25 @@
 </div> -->
 
 <div id="wrapper" (resized)="onResized($event)">
-<mat-grid-list id="matrix" cols="{{n_horizontal}}" rowHeight="1:1" style="width: {{width}}px" gutterSize="{{gutter_size}}px">
-    <mat-grid-tile *ngFor="let index of [].constructor(n_vertical*n_horizontal); let i = index" [style.background] = "pixels[i].getHex()">{{index}}</mat-grid-tile>
+<mat-grid-list id="matrix_1" cols="{{n_horizontal}}" rowHeight="1:1" style="width: {{width}}px" gutterSize="{{gutter_size}}px">
+    <div *ngFor="let index of [].constructor(n_vertical*n_horizontal); let i = index">
+        <mat-grid-tile  id="pixel_{{i}}">{{i}}_1</mat-grid-tile>
+    </div>
 </mat-grid-list>
+<!-- <mat-grid-list id="matrix_2" cols="{{n_horizontal}}" rowHeight="1:1" style="width: {{width}}px" gutterSize="{{gutter_size}}px">
+    <div *ngFor="let index of [].constructor(n_vertical*n_horizontal); let i = index">
+        <mat-grid-tile  id="pixel_{{i}}_1">{{i}}_2</mat-grid-tile>
+    </div>
+</mat-grid-list> -->
 </div>
+
+
+
+<!-- <div id="wrapper" (resized)="onResized($event)">
+<mat-grid-list id="matrix" cols="{{n_horizontal}}" rowHeight="1:1" style="width: {{width}}px" gutterSize="{{gutter_size}}px">
+    <div *ngFor="let pixel of pixels | async">
+        <mat-grid-tile *ngIf="pixel.patched" [style.background] = "getHex(pixel)"></mat-grid-tile>
+        <mat-grid-tile *ngIf="!pixel.patched" class="unpatched"></mat-grid-tile>
+    </div>
+</mat-grid-list>
+</div> -->

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import asyncio
+import random
 import websockets
 import json
 
@@ -50,11 +51,13 @@ async def consumer(message):
 step = 0
 
 
-def rgb_to_pixel_entry(rgb):
+def rgb_to_pixel_entry(rgb, patched):
+    print(patched)
     return {
         "r": rgb[0],
         "g": rgb[1],
-        "b": rgb[2]
+        "b": rgb[2],
+        "patched": patched
     }
 
 
@@ -69,7 +72,10 @@ async def rainbow(matrix=False):
 
     for i in range(num_pixels):
         pixel_index = (i * 256 // num_pixels_override) + step
-        pixels[i] = rgb_to_pixel_entry(wheel(pixel_index & 255))
+        patch = True
+        # if(i%3 == 0):
+        #     patch = False
+        pixels[i] = rgb_to_pixel_entry(wheel(pixel_index & 255), patch)
     await asyncio.sleep(0.01)
     step += 1
     if(step == 256):
@@ -80,6 +86,11 @@ async def rainbow(matrix=False):
    
 async def producer():
     await rainbow()
+    for pixel in pixels:
+        #get rand between 0 and 1
+        if(random.random() > 0.5):
+            pixel['patched'] = False
+
     return json.dumps(pixels)
 
 

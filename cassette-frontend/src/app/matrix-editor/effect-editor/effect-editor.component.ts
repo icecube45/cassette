@@ -38,6 +38,7 @@ export class EffectEditorComponent implements OnInit {
 
     onApply() {
         console.log("Apply");
+        console.log(JSON.stringify(this.effects[0]));
     }
 
 

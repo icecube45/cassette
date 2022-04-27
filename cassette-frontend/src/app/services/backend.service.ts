@@ -1,20 +1,15 @@
 import { Injectable } from "@angular/core";
-import { map, Observable, of, Subject, switchMap } from "rxjs";
+import { map, Observable, of, retry, Subject, switchMap } from "rxjs";
 import { webSocket } from 'rxjs/webSocket';
 import { Pixel } from "../pixel";
-
-export interface PixelInterface {
-    r: number;
-    g: number;
-    b: number;
-}
+import { HttpClient } from "@angular/common/http";
 
 
 @Injectable({
     providedIn: 'root'
 })
-export class MatrixLiveViewService {
-    private socket  = webSocket<PixelInterface[]>("ws://localhost:3000");
+export class BackendService {
+    private socket  = webSocket<Pixel[]>("ws://localhost:3000");
     public messages = this.socket.asObservable();
     
     private pixels_subject = new Subject<Pixel[]>();
@@ -22,13 +17,13 @@ export class MatrixLiveViewService {
     constructor() { 
         console.log("matrixLiveViewService");
 
-        this.socket.subscribe({ 
+        this.socket.pipe(retry()).subscribe({ 
             next: (msg) => {
-                let new_pixels: Pixel[] = [];
-                for(let pixel of msg) {
-                    new_pixels.push(new Pixel(pixel.r, pixel.g, pixel.b));
-                }
-                this.pixels_subject.next(new_pixels);
+                // let new_pixels: Pixel[] = [];
+                // for(let pixel of msg) {
+                //     new_pixels.push(new Pixel(pixel.r, pixel.g, pixel.b, pixel.patched));
+                // }
+                // this.pixels_subject.next(new_pixels);
             },
             error: (err) => {
                 console.log(err);
@@ -50,6 +45,7 @@ export class MatrixLiveViewService {
     }
 
     public getPixels(): Observable<Pixel[]> {       
-        return this.pixels_subject.asObservable();
+        // return this.pixels_subject.asObservable();
+        return this.messages.pipe(retry());
     }
 }
