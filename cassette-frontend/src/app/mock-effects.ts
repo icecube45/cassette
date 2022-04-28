@@ -1,15 +1,17 @@
-import { Effect } from './effect';
+import { Effect, EffectsWrapper } from './effect';
 import { EffectOptionType } from './effect-option';
 import { AnalogOption } from './effect-option';
 import { BooleanOption } from './effect-option';
 import { ColorOption } from './effect-option';
 import { SelectOption } from './effect-option';
 
-export const EFFECTS: Effect[] = [
-    {
+export const EFFECTS: EffectsWrapper = 
+{
+    activeId: 1,
+    effects: [
+    <Effect>{
         id: 1,
         name: 'Effect 1',
-        active: false,
         options: [
             <AnalogOption>{
                 id: 1,
@@ -40,10 +42,9 @@ export const EFFECTS: Effect[] = [
             }
         ]
     },
-    {
+    <Effect>{
         id: 2,
         name: 'Effect 2',
-        active: true,
         options: [
             <BooleanOption>{
                 id: 1,
@@ -73,7 +74,8 @@ export const EFFECTS: Effect[] = [
                 value: '#bada55'
             },
         ]
-    },
-];
+    }
+    ]
+};
 
 

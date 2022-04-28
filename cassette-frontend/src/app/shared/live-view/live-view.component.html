@@ -14,7 +14,7 @@
 <!-- <div id="wrapper"> -->
     <mat-grid-list id="matrix" cols="{{n_horizontal}}" rowHeight="fit" style="aspect-ratio:{{n_horizontal}}/{{n_vertical}}" gutterSize="{{gutter_size}}px">
         <div *ngFor="let index of [].constructor(n_vertical*n_horizontal); let i = index">
-            <mat-grid-tile  id="pixel_{{i}}">{{i}}_1</mat-grid-tile>
+            <mat-grid-tile  id="pixel_{{i}}"></mat-grid-tile>
         </div>
     </mat-grid-list>
 <!-- </div> -->

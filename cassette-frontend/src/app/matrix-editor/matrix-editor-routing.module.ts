@@ -5,8 +5,7 @@ import { MatrixEditorComponent } from './matrix-editor.component';
 
 const routes: Routes = [
     { path: '', component: MatrixEditorComponent },
-    { path: 'edit/channel/:channel_id', component: EffectEditorComponent },
-    { path: 'edit/mixer/:mixer_id', component: EffectEditorComponent },
+    { path: 'edit/:type/:id', component: EffectEditorComponent },
 ];
 
 @NgModule({

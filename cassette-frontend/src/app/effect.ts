@@ -4,6 +4,10 @@ import { EffectOption } from './effect-option';
 export interface Effect {
     id: number;
     name: string;
-    active: boolean;
     options: EffectOption[];
+}
+
+export interface EffectsWrapper {
+    activeId: number;
+    effects: Effect[];
 }

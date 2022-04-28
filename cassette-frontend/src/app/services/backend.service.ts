@@ -2,7 +2,10 @@ import { Injectable } from "@angular/core";
 import { map, Observable, of, retry, Subject, switchMap } from "rxjs";
 import { Pixel } from "../pixel";
 import { HttpClient } from "@angular/common/http";
-
+import { EFFECTS } from "../mock-effects";
+import { MIXER } from '../mock-mixers';
+import { Mixer } from "../mixer";
+import { Effect, EffectsWrapper } from "../effect";
 
 
 @Injectable({
@@ -14,7 +17,7 @@ export class BackendService {
     // private pixels = this.socket.fromEvent<string>('pixels');
 
 
-    constructor() { 
+    constructor(private http: HttpClient) { 
         console.log("matrixLiveViewService");
 
         // this.socket.pipe(retry()).subscribe({ 
@@ -39,9 +42,26 @@ export class BackendService {
         // );
     }
 
+    public getMixer(id: number): Observable<Mixer> {
+        return of(MIXER);
+        return this.http.get<Mixer>(`/api/mixers/${id}`);
+    }
 
-    public sendMessage(msg: any) {
-    //   this.socket.next(msg);
+    public getEffects(id: number): Observable<EffectsWrapper> {
+        return of(EFFECTS);
+        return this.http.get<EffectsWrapper>(`/api/channels/${id}/effects`);
+    }
+
+    public updateChannelEffectOptions(id: number, effect: Effect): Observable<Effect> {
+        return this.http.post<Effect>(`/api/channels/${id}/effects/${effect.id}`, effect);
+    }
+
+    public setChannelActiveEffect(id: number, effect_id: number): Observable<Effect> {
+        return this.http.post<Effect>(`/api/channels/${id}/active_effect`, effect_id);
+    }
+
+    public updateMixer(id: number, mixer: Mixer): Observable<Mixer> {
+        return this.http.post<Mixer>(`/api/mixers/${id}`, mixer);
     }
 
     // public getPixels(): Observable<string> {       

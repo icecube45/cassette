@@ -1,9 +1,9 @@
-import { Component, OnInit, Inject } from '@angular/core';
+import { Component, OnInit, Inject, EventEmitter } from '@angular/core';
 import { ActivatedRoute } from '@angular/router'
 
-import { EFFECTS } from '../../mock-effects';
 
-import { Effect } from 'src/app/effect';
+import { Mixer } from 'src/app/mixer';
+import { Effect, EffectsWrapper } from 'src/app/effect';
 import { EffectOption } from 'src/app/effect-option';
 import { AnalogOption } from 'src/app/effect-option';
 import { BooleanOption } from 'src/app/effect-option';
@@ -12,6 +12,9 @@ import { SelectOption } from 'src/app/effect-option';
 import { EffectOptionType } from 'src/app/effect-option';
 import {MatDialog, MatDialogRef, MAT_DIALOG_DATA} from '@angular/material/dialog';
 import { ColorEvent } from 'ngx-color';
+import { BackendService } from 'src/app/services/backend.service';
+import { MatSelectChange } from '@angular/material/select';
+import { on } from 'ws';
 
 @Component({
   selector: 'effect-editor',
@@ -20,25 +23,71 @@ import { ColorEvent } from 'ngx-color';
 })
 export class EffectEditorComponent implements OnInit {
 
-    effects = EFFECTS;
+    effectsWrapper: EffectsWrapper = {activeId: 0, effects: []};
+    untouchedEffectsWrapper: EffectsWrapper = {activeId: 0, effects: []};
     readonly EffectOptionType = EffectOptionType;
-    currentEffect: Effect = this.effects.find(e => e.active == true)!;
-    channel_id: number = 0;
+    currentEffect: Effect = {id: 0, name: "", options: []};
+    id: number = 0;
     mixer_id: number = 0;
-    constructor(private route: ActivatedRoute, public dialog: MatDialog) { }
+    currentMixer: Mixer = {id: 0, options: []};
+    untouchedMixer: Mixer = {id: 0, options: []};
+    type: string = "";
+    constructor(private route: ActivatedRoute, public dialog: MatDialog, private backend: BackendService) { }
 
     ngOnInit(): void {
-        this.channel_id = Number(this.route.snapshot.paramMap.get('channel_id'));
-        this.mixer_id = Number(this.route.snapshot.paramMap.get('mixer_id'));
+        this.type = String(this.route.snapshot.paramMap.get('type'));
+        this.id = Number(this.route.snapshot.paramMap.get('id'));
+        if(this.type == "mixer") {
+            this.backend.getMixer(this.id).subscribe(mixer => {
+                this.currentMixer = mixer;
+                this.untouchedMixer = JSON.parse(JSON.stringify(mixer));
+            });
+        }
+        else if(this.type == "channel") {
+            this.backend.getEffects(this.id).subscribe(effectsWrapper => {
+                this.effectsWrapper = effectsWrapper
+                this.untouchedEffectsWrapper = JSON.parse(JSON.stringify(this.effectsWrapper));
+                this.currentEffect = this.effectsWrapper.effects.find(e => e.id == effectsWrapper.activeId)!;
+            });
+        }
     }
 
-    onRevert() {
+    public onActiveEffectChange(event: MatSelectChange) {
+        this.effectsWrapper.activeId = event.value;
+        this.backend.setChannelActiveEffect(this.id, this.effectsWrapper.activeId).subscribe(() => {
+
+        });
+    }
+
+    public onEffectOptionChange() {
+        if(this.type == "mixer") {
+            this.backend.updateMixer(this.id, this.currentMixer).subscribe(() => {
+            });
+        }
+        else if(this.type == "channel") {
+            this.backend.updateChannelEffectOptions(this.id, this.currentEffect).subscribe(() => {
+            });
+        }
+    }
+
+
+    public onRevert() {
         console.log("Revert");
+        if(this.type == "mixer") {
+            this.currentMixer = JSON.parse(JSON.stringify(this.untouchedMixer));
+            this.onEffectOptionChange();
+        }
+        else if(this.type == "channel") {
+            this.effectsWrapper = JSON.parse(JSON.stringify(this.untouchedEffectsWrapper));
+            this.currentEffect = this.effectsWrapper.effects.find(e => e.id == this.effectsWrapper.activeId)!;
+            this.backend.setChannelActiveEffect(this.id, this.effectsWrapper.activeId).subscribe(() => {
+                this.onEffectOptionChange();
+            });
+        }
     }
 
-    onApply() {
+    public onApply() {
         console.log("Apply");
-        console.log(JSON.stringify(this.effects[0]));
     }
 
 
@@ -64,6 +113,7 @@ export class EffectEditorComponent implements OnInit {
       
           dialogRef.afterClosed().subscribe(result => {
             console.log('The dialog was closed');
+            this.onEffectOptionChange();
           });
         // option.colorPickerOpen = true;
     }

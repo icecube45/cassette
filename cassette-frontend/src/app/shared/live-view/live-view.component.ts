@@ -4,8 +4,7 @@ import { Observable, of } from 'rxjs';
 import { Pixel } from 'src/app/pixel';
 import { BackendService } from 'src/app/services/backend.service';
 import { DOCUMENT } from '@angular/common'; 
-import { DefaultEventsMap } from '@socket.io/component-emitter';
-import { Socket } from 'ngx-socket-io';
+
 
 @Component({
   selector: 'live-view',
@@ -35,7 +34,7 @@ export class LiveViewComponent implements OnInit {
     }
 
     private initWebSocket(): void {
-        this.ws = new WebSocket('ws://localhost:3000');
+        this.ws = new WebSocket('ws://'+window.location.hostname+':3000');
         this.ws.onmessage = (evt: MessageEvent) => {this.onNewPixelData(evt)};
         this.ws.onerror = (): void => {
             this.ws.close();
