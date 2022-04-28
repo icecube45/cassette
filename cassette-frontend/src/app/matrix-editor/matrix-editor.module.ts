@@ -21,6 +21,7 @@ import { MatInputModule } from '@angular/material/input';
 import { ColorSketchModule } from 'ngx-color/sketch';
 import {MatDialogModule} from '@angular/material/dialog'; 
 
+
 @NgModule({
   declarations: [
     MatrixEditorComponent,

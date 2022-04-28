@@ -10,18 +10,20 @@
     </div>
 </div> -->
 
-<div id="wrapper" (resized)="onResized($event)">
-<mat-grid-list id="matrix_1" cols="{{n_horizontal}}" rowHeight="1:1" style="width: {{width}}px" gutterSize="{{gutter_size}}px">
-    <div *ngFor="let index of [].constructor(n_vertical*n_horizontal); let i = index">
-        <mat-grid-tile  id="pixel_{{i}}">{{i}}_1</mat-grid-tile>
-    </div>
-</mat-grid-list>
-<!-- <mat-grid-list id="matrix_2" cols="{{n_horizontal}}" rowHeight="1:1" style="width: {{width}}px" gutterSize="{{gutter_size}}px">
+<!-- <div id="wrapper" (resized)="onResized($event)"> -->
+<!-- <div id="wrapper"> -->
+    <mat-grid-list id="matrix" cols="{{n_horizontal}}" rowHeight="fit" style="aspect-ratio:{{n_horizontal}}/{{n_vertical}}" gutterSize="{{gutter_size}}px">
+        <div *ngFor="let index of [].constructor(n_vertical*n_horizontal); let i = index">
+            <mat-grid-tile  id="pixel_{{i}}">{{i}}_1</mat-grid-tile>
+        </div>
+    </mat-grid-list>
+<!-- </div> -->
+    <!-- <mat-grid-list id="matrix_2" cols="{{n_horizontal}}" rowHeight="1:1" style="width: {{width}}px" gutterSize="{{gutter_size}}px">
     <div *ngFor="let index of [].constructor(n_vertical*n_horizontal); let i = index">
         <mat-grid-tile  id="pixel_{{i}}_1">{{i}}_2</mat-grid-tile>
     </div>
 </mat-grid-list> -->
-</div>
+<!-- </div> -->
 
 
 

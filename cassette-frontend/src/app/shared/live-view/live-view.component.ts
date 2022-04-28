@@ -4,6 +4,8 @@ import { Observable, of } from 'rxjs';
 import { Pixel } from 'src/app/pixel';
 import { BackendService } from 'src/app/services/backend.service';
 import { DOCUMENT } from '@angular/common'; 
+import { DefaultEventsMap } from '@socket.io/component-emitter';
+import { Socket } from 'ngx-socket-io';
 
 @Component({
   selector: 'live-view',
@@ -14,70 +16,65 @@ export class LiveViewComponent implements OnInit {
     @Input() n_horizontal: number = 0;
     @Input() n_vertical: number = 0;
 
-    width: number = 0;
     gutter_size: number = 2;
-
-    pixels: Observable<Pixel[]> = of([]);
 
     matrix_num: number = 1;
 
+    lastRan: number = 0;
+
+    
+
+    ws!: WebSocket;
 
     constructor(@Inject(DOCUMENT) document: Document, private backendService: BackendService) { }
 
+    
+
     ngOnInit(): void {
-        // for pixel array initialization
-        // for(let i=0; i<this.n_horizontal*this.n_vertical; i++) {
-        //     // create new pixel interface object
-        //     let pixel:Pixel = <Pixel>{
-        //                                 r: 0,
-        //                                 g: 0,
-        //                                 b: 0,
-        //                                 patched: false
-        //                              };
-        //     this.pixels.push(pixel);
-        // }
-        // this.backendService.getPixels().subscribe(pixels => {
-        //     // set mat grid tiles to pixel colors
-        //     // for pixel of pixels
-        //     if(pixels.length == this.n_horizontal*this.n_vertical) {
-        //         this.pixels = pixels;
-        //     }
-        // });
-        // this.pixels = this.backendService.getPixels();
-        this.backendService.getPixels().subscribe(pixels => {
-            // set mat grid tiles to pixel colors
-            // for pixel of pixels
-            for (let i = 0; i < pixels.length; i++) {
-                var pixel = document.getElementById("pixel_" + i);
-                if(pixel != null) {
-                    if(pixels[i].patched){
-                        pixel.style.backgroundColor = this.getHex(pixels[i]);
-                        pixel.classList.add("patched");
-                        pixel.classList.remove("unpatched");
-                    }
-                    else
-                    {
-                        pixel.style.backgroundColor = "transparent";
-                        pixel.classList.add("unpatched");
-                        pixel.classList.remove("patched");
-                    }
+        this.initWebSocket();
+    }
+
+    private initWebSocket(): void {
+        this.ws = new WebSocket('ws://localhost:3000');
+        this.ws.onmessage = (evt: MessageEvent) => {this.onNewPixelData(evt)};
+        this.ws.onerror = (): void => {
+            this.ws.close();
+        };
+       
+        this.ws.onclose = (): void => {
+            console.log("live view websocket closed, trying again in a second")
+
+            setTimeout(() => {
+                this.initWebSocket();
+              }, 1000);
+        }
+        console.log("Trying to connect to cassette live view websocket")
+    }
+
+    private onNewPixelData(evt: MessageEvent): void {
+        const pixels: Pixel[] = JSON.parse(evt.data);
+        for (let i = 0; i < pixels.length; i++) {
+            var pixel_element = document.getElementById("pixel_" + i);
+            if(pixel_element != null) {
+                if(pixels[i].patched){
+                    pixel_element.style.backgroundColor = this.getHex(pixels[i]);
+                    // pixel.classList.add("patched");
+                    // pixel.classList.remove("unpatched");
+                }
+                else
+                {
+                    pixel_element.style.backgroundColor = "transparent";
+                    // pixel.classList.add("unpatched");
+                    // pixel.classList.remove("patched");
                 }
             }
-            // this.matrix_swap();
-        });
-
-    }
-
-    onResized(event: ResizedEvent) {
-        console.log("resized");
-        if(event.newRect.height/this.n_vertical < event.newRect.width/this.n_horizontal) {
-            this.width = this.n_horizontal * (event.newRect.height-this.gutter_size*(this.n_horizontal-1))/this.n_vertical;
-        }else{
-            this.width = this.n_horizontal * (event.newRect.width-this.gutter_size*(this.n_vertical-1))/this.n_horizontal;
         }
-        console.log(this.width);
-        console.log(this.pixels);
+        // let lastRanCopy = this.lastRan
+        // this.lastRan = new Date().getTime()
+        // console.log(this.lastRan - lastRanCopy);
     }
+
+
 
 
     // public matrix_swap() {
@@ -125,7 +122,5 @@ export class LiveViewComponent implements OnInit {
     public getHex(pixel: Pixel): string {
         return "#" + this.componentToHex(pixel.r) + this.componentToHex(pixel.g) + this.componentToHex(pixel.b);
     }
-
-
 
 }

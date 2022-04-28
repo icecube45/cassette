@@ -76,7 +76,7 @@ async def rainbow(matrix=False):
         # if(i%3 == 0):
         #     patch = False
         pixels[i] = rgb_to_pixel_entry(wheel(pixel_index & 255), patch)
-    await asyncio.sleep(0.01)
+    # await asyncio.sleep(0.005)
     step += 1
     if(step == 256):
         step = 0
@@ -86,10 +86,10 @@ async def rainbow(matrix=False):
    
 async def producer():
     await rainbow()
-    for pixel in pixels:
-        #get rand between 0 and 1
-        if(random.random() > 0.5):
-            pixel['patched'] = False
+    # for pixel in pixels:
+    #     #get rand between 0 and 1
+    #     if(random.random() > 0.5):
+    #         pixel['patched'] = False
 
     return json.dumps(pixels)
 
