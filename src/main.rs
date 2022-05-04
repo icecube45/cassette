@@ -23,6 +23,7 @@ use std::{
 use tower::{BoxError, ServiceBuilder};
 use tower_http::{trace::TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use tokio::time::timeout;
 
 use std::thread;
 
@@ -108,34 +109,42 @@ async fn ws_handler(
 }
 
 async fn handle_socket(mut socket: WebSocket, state: Arc<Mutex<State>>) {
-    if let Some(msg) = socket.recv().await {
-        if let Ok(msg) = msg {
+    if let Ok(msg) = timeout(Duration::from_secs(5), socket.recv()).await {
+        if let Some(msg) = msg {
             match msg {
-                Message::Text(t) => {
-                    println!("client sent str: {:?}", t);
+                Ok(msg) => {
+                    match msg {
+                        Message::Text(t) => {
+                            println!("client requested output: {:?}", t);
+                        }
+                        Message::Binary(_) => {
+                            println!("client sent binary data");
+                        }
+                        Message::Ping(_) => {
+                            println!("socket ping");
+                        }
+                        Message::Pong(_) => {
+                            println!("socket pong");
+                        }
+                        Message::Close(_) => {
+                            println!("client disconnected");
+                            return;
+                        }
+                    }
                 }
-                Message::Binary(_) => {
-                    println!("client sent binary data");
-                }
-                Message::Ping(_) => {
-                    println!("socket ping");
-                }
-                Message::Pong(_) => {
-                    println!("socket pong");
-                }
-                Message::Close(_) => {
-                    println!("client disconnected");
+                Err(_) => {
+                    println!("something happends");
                     return;
                 }
             }
+         }
         } else {
-            println!("client disconnected");
+            //prob do some pattern matching on Err(_) to catch what kind of error happend
+            println!("timeout");
             return;
-        }
-    }
+           }
 
     loop {
-        
         let state = Arc::clone(&state);
         let message = state.lock().unwrap().db.len().to_string();
         if socket.send(Message::Text(String::from(message))).await.is_err()
