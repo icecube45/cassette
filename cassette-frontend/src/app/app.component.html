@@ -1,0 +1,8 @@
+<mat-toolbar>
+    <button mat-icon-button [routerLink]="['/home']"><mat-icon svgIcon="cassette"></mat-icon></button>
+    <span class="toolbar-spacer"></span>
+    <span>{{title}}</span>
+    <span class="toolbar-spacer"></span>
+    <button mat-icon-button class="settings-icon" aria-hidden="false" aria-label="Settings icon"><mat-icon>settings</mat-icon></button>
+</mat-toolbar>
+<router-outlet></router-outlet>

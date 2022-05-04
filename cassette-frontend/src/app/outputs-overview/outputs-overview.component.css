@@ -1,0 +1,12 @@
+.outputs {
+    padding: 16px;
+}
+
+.outputs > mat-card {
+    width: 200px;
+}
+
+
+::ng-deep .mat-card.output-card.active {
+    background-color: #67b48f;
+}

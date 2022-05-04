@@ -1,0 +1,27 @@
+mat-grid-list {
+    /* height: 100%;
+    margin-left:auto;
+    margin-right:auto; */
+    height: auto;
+    max-height: 25%;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+
+.unpatched {
+    background: rgba(0, 0, 0, 0);
+}
+
+
+/* #matrix_1, #matrix_2 { 
+    position:absolute;
+}
+
+#matrix_1 { 
+    z-index:9;
+}
+#matrix_2 { 
+    z-index:8;
+    visibility: hidden;
+}*/

@@ -1,0 +1,25 @@
+.effect-button {
+    cursor: pointer;
+    text-align: center;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    vertical-align: middle;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+mat-grid-list {
+    height: auto;
+    width: auto;
+    max-height: 40%;
+    margin-left: auto;
+    margin-right: auto;
+    aspect-ratio: 1/1;
+}
+
+.spacer {
+    height: 10%;
+}

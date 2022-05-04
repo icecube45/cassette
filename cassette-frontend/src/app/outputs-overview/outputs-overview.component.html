@@ -1,0 +1,17 @@
+<div class="outputs">
+<div fxLayout="row wrap" fxLayoutGap="16px grid">
+    <div fxFlex="25%" fxFlex.xs="100%" fxFlex.sm="33%" *ngFor="let output of outputs">
+        <mat-card class="output-card" [class.active]="output.active === true">
+            <mat-card-title-group>
+                <mat-card-title>{{output.name}}</mat-card-title>
+                <mat-card-subtitle>ID: {{output.id}}</mat-card-subtitle>
+                <mat-icon *ngIf="output.type === 'matrix'">grain</mat-icon>
+                <mat-icon *ngIf="output.type === 'strip'">linear_scale</mat-icon>
+            </mat-card-title-group>
+            <mat-card-actions>
+                <button mat-button (click)="onConfigure(output)">CONFIGURE</button>
+            </mat-card-actions>
+        </mat-card>
+    </div>
+</div>
+</div>
