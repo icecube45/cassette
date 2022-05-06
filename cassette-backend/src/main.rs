@@ -28,6 +28,10 @@ use serde::{Serialize, Deserialize};
 
 use std::thread;
 
+use cassette_backend::RainbowWheel;
+use cassette_backend::Animation;
+
+
 
 #[tokio::main]
 async fn main() {
@@ -149,22 +153,26 @@ async fn handle_socket(mut socket: WebSocket, state: Arc<Mutex<State>>) {
             return;
            }
 
+    let mut ani = RainbowWheel::new();
     loop {
-        let pixels = rainbow(false);
-        let mut frame: String = "[".to_string();
-        let mut it = pixels.iter().peekable();
-        while let Some(pixel) = it.next() {
-            // serialize it and build json array
-            let json = serde_json::to_string(&pixel).unwrap();
-            // add it to frame
-            frame.push_str(&json);
-            // add comma if not last element
-            if it.peek().is_some() {
-                frame.push_str(",");
+        let frame = ani.generate_frame(30, 10);
+
+
+        let mut json_frame: String = "[".to_string();
+
+        for j in 0..frame.height() {
+            for i in 0..frame.width() {
+                let pixel = frame.pixels[[j, i]];
+                let r = pixel.r;
+                let g = pixel.g;
+                let b = pixel.b;
+                json_frame.push_str(&format!("{{\"r\":{},\"g\":{},\"b\":{}, \"patched\":true}},", r, g, b));
             }
         }
-        frame.push_str("]");
-        if socket.send(Message::Text(frame)).await.is_err() {
+        //remove last comma
+        json_frame.pop();
+        json_frame.push_str("]");
+        if socket.send(Message::Text(json_frame)).await.is_err() {
             println!("Client disconnected :(");
             return;
         }
@@ -172,77 +180,10 @@ async fn handle_socket(mut socket: WebSocket, state: Arc<Mutex<State>>) {
     }
 }
 
-fn wheel(mut n: u8) -> (u8, u8, u8) {
-    let mut r: u8 = 0;
-    let mut g: u8 = 0;
-    let mut b: u8 = 0;
-    if n < 85 {
-        r = n * 3;
-        g = 255-n*3;
-        b = 0;
-    }
-    else if n < 170 {
-        n = n-85;
-        r = 255 - n*3;
-        g = 0;
-        b = n*3;
-    }
-    else {
-        n = n-170;
-        r = 0;
-        g = n*3;
-        b = 255 - n*3;
-    }
-    return (r, g, b);
-}
-
-static mut STEP: u16 = 0;
-const WIDTH: u16 = 30;
-const HEIGHT: u16 = 10;
-const NUM_PIXELS: u16 = (WIDTH*HEIGHT);
-
-#[derive(Copy, Clone, Serialize, Deserialize)]
-struct Pixel {
-    r: u8,
-    g: u8,
-    b: u8,
-    patched: bool,
-}
 
 
-fn strip_to_matrix(strip: &mut [Pixel; NUM_PIXELS as usize]) -> &mut [Pixel; NUM_PIXELS as usize] {
-    let mut j = 0;
-    for i in 0..HEIGHT-1 {
-        j = i + 1;
-        strip.copy_within(0..WIDTH as usize, (j*WIDTH) as usize)
-    }
-    return strip;
-}
 
-fn rainbow(matrix: bool) -> [Pixel; NUM_PIXELS as usize] {
-    let mut num_pixels_override = NUM_PIXELS;
-    let mut pixels: [Pixel; NUM_PIXELS as usize] = [Pixel { r: 0, g: 0, b: 0, patched: false }; NUM_PIXELS as usize];
-    if !matrix {
-        num_pixels_override = WIDTH;
-    }
-    for i in 0..NUM_PIXELS as u32 {
-        unsafe{
-            let pixel_index: u32  = (i*256/num_pixels_override as u32) + STEP as u32;
-            let (r, g, b) = wheel(pixel_index as u8);
-            pixels[i as usize] = Pixel { r, g, b, patched: true };
-        }
-    }
-    unsafe{
-        STEP = STEP + 1;
-        if STEP == 256 {
-            STEP = 0;
-        }
-    }
-    if !matrix{
-        pixels = *strip_to_matrix(&mut pixels);
-    }
-    return pixels;
-}
+
 
         
 

@@ -7,31 +7,27 @@
 //     }
 // }
 
-mod animation_tools {
     use std::{ops::Mul, cmp::{max, min}};
 
-    use ndarray::{Ix2, Array};
+    use ndarray::{Ix2, Array, Axis};
 
-    trait Animation {
-        fn generate_frame(&mut self) -> Vec<Pixel>;
-
-    }
 
     #[derive(Clone, Copy)]
-    struct Pixel{
-        r: u8,
-        g: u8,
-        b: u8,
+    pub struct Pixel{
+        pub r: u8,
+        pub g: u8,
+        pub b: u8,
     }
 
     impl Pixel{
-        fn new(r: u8, g: u8, b: u8) -> Pixel {
+        fn from_rgb(r: u8, g: u8, b: u8) -> Pixel {
             Pixel{
                 r,
                 g,
                 b,
             }
         }
+
         fn black() -> Pixel {
             Pixel{
                 r: 0,
@@ -92,8 +88,8 @@ mod animation_tools {
 
 
 
-    struct Frame{
-        pixels: Array::<Pixel, Ix2>,
+    pub struct Frame{
+        pub pixels: Array::<Pixel, Ix2>,
         width: u32,
         height: u32,
         timestamp: u128,
@@ -102,21 +98,24 @@ mod animation_tools {
     }
 
     impl Frame{
-        fn new(width: u32, height: u32) -> Frame {
+        pub fn new(width: u32, height: u32) -> Frame {
             Frame{
-                pixels: Array::from_elem((width as usize, height as usize), Pixel::black()),
+                pixels: Array::from_elem((height as usize, width as usize), Pixel::black()),
                 width,
                 height,
                 timestamp: 0,
             }
         }
-        fn update_timestamp(&mut self) {
+        pub fn update_timestamp(&mut self) {
             self.timestamp = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis();
         }
-        fn width(&self) -> usize {
+        pub fn timestamp(&self) -> u128 {
+            self.timestamp
+        }
+        pub fn width(&self) -> usize {
             self.width as usize
         }
-        fn height(&self) -> usize {
+        pub fn height(&self) -> usize {
             self.height as usize
         }
     }
@@ -323,5 +322,93 @@ mod animation_tools {
     }
 
 
+    pub struct RainbowWheel {
+        // the current position of the rainbow wheel
+        step: u8,
+    }
+    pub trait Animation {
+        fn generate_frame(&mut self, width: u32, height: u32) -> Frame;
+    }
 
-}
+
+    impl RainbowWheel {
+        // fn strip_to_matrix(frame: Frame) -> Frame {
+        //     let mut copy = frame.pixels.clone();
+        //     let strip = copy.row_mut(0);
+        //     for mut row in frame.pixels.axis_iter_mut(Axis(0)) {
+        //         row = strip;
+        //     }
+        //     return frame;
+        // }
+        
+        fn rainbow(&mut self, mut frame: Frame, matrix: bool) -> Frame {
+            let mut num_pixels_override = frame.height()*frame.width();
+            if !matrix {
+                num_pixels_override = frame.width();
+            }
+            for i in 0..num_pixels_override {
+                let pixel_index = (i*256/num_pixels_override) + self.step as usize;
+                let (r, g, b) = RainbowWheel::wheel(pixel_index as u8);
+                let pixel = Pixel::from_rgb(r, g, b);
+                if !matrix {
+                    frame.pixels[[0,i]] = pixel;
+                } else {
+                    let width = frame.width();
+                    frame.pixels[[i/width, i%width]] = pixel;
+                }
+            }
+            if(self.step == 255){
+                self.step = 0;
+            } else {
+                self.step += 1;
+            }
+            if !matrix{
+                // frame = RainbowWheel::strip_to_matrix(frame);
+            }
+            return frame;
+        }
+
+        fn wheel(mut n: u8) -> (u8, u8, u8) {
+            let mut r: u8 = 0;
+            let mut g: u8 = 0;
+            let mut b: u8 = 0;
+            if n < 85 {
+                r = n * 3;
+                g = 255-n*3;
+                b = 0;
+            }
+            else if n < 170 {
+                n = n-85;
+                r = 255 - n*3;
+                g = 0;
+                b = n*3;
+            }
+            else {
+                n = n-170;
+                r = 0;
+                g = n*3;
+                b = 255 - n*3;
+            }
+            return (r, g, b);
+        }        
+        pub fn new() -> RainbowWheel {
+            return RainbowWheel {
+                step: 0,
+            };
+        }
+    }
+
+    impl Animation for RainbowWheel {
+        
+
+        fn generate_frame(&mut self, width: u32, height: u32) -> Frame {
+            let mut frame = Frame::new(width, height);
+            frame = RainbowWheel::rainbow(self, frame, true);
+            frame.update_timestamp();
+            return frame;
+        }
+    }
+            
+
+
+
