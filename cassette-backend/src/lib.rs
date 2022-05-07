@@ -157,19 +157,38 @@
     // use Vec<Vec<Pixel>> as Frame;
     impl Mixer {
         fn progressive(&mut self, first_channel: Frame, second_channel: Frame) -> Frame {
+            //crossfade that mixes each frame at 100% when the weight is at 50
             let mut result = Frame::new(first_channel.width, first_channel.height);
-            for i in 0..first_channel.height() {
-                for j in 0..first_channel.width() {
-                    let first_pixel = first_channel.pixels[[i,j]];
-                    let second_pixel = second_channel.pixels[[i,j]];
-                    let r = (first_pixel.r as f32 * (self.mix_weight as f32 / 100.0)) + (second_pixel.r as f32 * (1.0 - (self.mix_weight as f32 / 100.0)));
-                    let g = (first_pixel.g as f32 * (self.mix_weight as f32 / 100.0)) + (second_pixel.g as f32 * (1.0 - (self.mix_weight as f32 / 100.0)));
-                    let b = (first_pixel.b as f32 * (self.mix_weight as f32 / 100.0)) + (second_pixel.b as f32 * (1.0 - (self.mix_weight as f32 / 100.0)));
+            for j in 0..first_channel.height() {
+                for i in 0..first_channel.width() {
+                    let first_pixel = first_channel.pixels[[j, i]];
+                    let second_pixel = second_channel.pixels[[j, i]];
+                    let mut first_mix_weight = 0.0;
+                    let mut second_mix_weight = 0.0;
+                    if(self.mix_weight < 0.5) {
+                        first_mix_weight =  1.0;
+                        second_mix_weight = self.mix_weight/100.0 * 2.0;
+                    } else {
+                        first_mix_weight = (1.0 - self.mix_weight / 100.0) * 2.0;
+                        second_mix_weight = 1.0;
+                    }
+                    let mut r = (first_pixel.r as f32 * first_mix_weight + second_pixel.r as f32 * second_mix_weight);
+                    let mut g = (first_pixel.g as f32 * first_mix_weight + second_pixel.g as f32 * second_mix_weight);
+                    let mut b = (first_pixel.b as f32 * first_mix_weight + second_pixel.b as f32 * second_mix_weight);
+                    if(r > 255.0) {
+                        r = 255.0;
+                    }
+                    if(g > 255.0) {
+                        g = 255.0;
+                    }
+                    if(b > 255.0) {
+                        b = 255.0;
+                    }
                     let r = r as u8;
                     let g = g as u8;
                     let b = b as u8;
                     let pixel = Pixel{r, g, b};
-                    result.pixels[[i,j]] = pixel;
+                    result.pixels[[j,i]] = pixel;
                 }
             }
             result.update_timestamp();

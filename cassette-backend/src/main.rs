@@ -159,7 +159,7 @@ async fn handle_socket(mut socket: WebSocket, state: Arc<Mutex<State>>) {
     let mut rainbow = RainbowWheel::new();
     let mut squares = ExpandingSquares::new();
     let mut mixer = Mixer{
-        mix_mode: MixMode::Linear,
+        mix_mode: MixMode::Progressive,
         mix_weight: 50f32,
     };
     loop {
