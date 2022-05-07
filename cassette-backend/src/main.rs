@@ -1,7 +1,5 @@
 //! Simple in-memory key/value store showing features of axum.
 
-pub mod components;
-
 use axum::{
     body::Bytes,
     error_handling::HandleErrorLayer,
@@ -11,11 +9,12 @@ use axum::{
     },
     http::StatusCode,
     response::IntoResponse,
-    routing::{get, post},
+    routing::{get, post, put},
     Router,
     Json
     
 };
+use hecs::{World, Entity, Bundle, EntityBuilder};
 use core::time;
 use std::{
     borrow::Cow,
@@ -29,8 +28,6 @@ use tower_http::{trace::TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use tokio::{time::timeout, sync::RwLock};
 use serde::{Serialize, Deserialize};
-use bevy_ecs::prelude::*;
-use bevy_ecs::world::World;
 
 
 use std::thread;
@@ -56,23 +53,18 @@ async fn main() {
                 let world = world.clone();
                 move |body| { spawn_entity(world, body) }
             }))
-        .layer(
-            ServiceBuilder::new()
-                // Handle errors from middleware
-                .layer(HandleErrorLayer::new(handle_error))
-                .load_shed()
-                .concurrency_limit(1024)
-                .timeout(Duration::from_secs(10))
-                .layer(TraceLayer::new_for_http())
-                .into_inner(),
-        );
+        .route("/get_entity",
+            get({
+                let world = world.clone(); 
+                move |body| { get_entity(world, body) }
+            }));
 
     tokio::spawn(async move {
-        let one_sec = time::Duration::from_millis(16);
+        let one_sec = time::Duration::from_millis(1000);
         loop {
             thread::sleep(one_sec);
             let world = world.read().await;
-            println!("{:?}", world.entities().len());
+            println!("{:?}", world.len());
         }
     });
 
@@ -86,28 +78,33 @@ async fn main() {
         .unwrap();
 }
 
-#[derive(Deserialize, Component)]
+#[derive(Bundle, Deserialize, Debug, Serialize)]
 struct Pixel {
     r: u8,
     g: u8,
     b: u8,
 }
 
-#[derive(Serialize)]
-struct EntityID {
-    id: u32
+async fn spawn_entity(world: Arc<RwLock<World>>, extract::Json(payload): extract::Json<Pixel>) -> Json<Entity> {
+    let mut world = world.write().await;
+    let mut builder = EntityBuilder::new();
+    builder.add(Pixel { r: payload.r, g: payload.g, b: payload.b });
+    let entity = world.spawn(builder.build());
+    println!("Spawned entity: {}", entity.id());
+    Json(entity)
 }
 
-async fn spawn_entity(world: Arc<RwLock<World>>, extract::Json(payload): extract::Json<Pixel>) -> Json<EntityID> {
-    let mut world = world.write().await;
-    let entity = world.spawn()
-        .insert(Pixel {
-            r: payload.r,
-            g: payload.g,
-            b: payload.b
-        }).id();
-    println!("Spawned entity: {}", entity.id());
-    Json(EntityID { id: entity.id() })
+async fn get_entity(world: Arc<RwLock<World>>, extract::Json(entity): extract::Json<Entity>) -> Json<Pixel> {
+    let world = world.read().await;
+    let pixel = world.get::<Pixel>(entity);
+
+    match pixel {
+        Ok(pixel) => return Json(Pixel { r: pixel.r, g: pixel.g, b: pixel.b }),
+        Err(err) => {
+            println!("Error getting pixel: {:?}", err);
+            return Json(Pixel { r: 0, g: 0, b: 0 });
+        }
+    }
 }
 
 async fn handle_error(error: BoxError) -> impl IntoResponse {
