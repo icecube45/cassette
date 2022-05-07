@@ -10,6 +10,7 @@
     use std::{ops::Mul, cmp::{max, min}};
 
     use ndarray::{Ix2, Array, Axis};
+    use rand::Rng;
 
 
     #[derive(Clone, Copy)]
@@ -57,7 +58,7 @@
             }
         }
         fn get_intensity(&self) -> f32 {
-            ((self.r + self.g + self.b) / 3) as f32 / 255f32
+            ((self.r as u32 + self.g as u32 + self.b as u32) as f32 / 3f32) / 255f32
         }
         fn is_transparent(&self) -> bool {
             self.r == 0 && self.g == 0 && self.b == 0
@@ -118,10 +119,24 @@
         pub fn height(&self) -> usize {
             self.height as usize
         }
+
+        pub fn drawRect(&mut self, x: i32, y: i32, width: i32, height: i32, color: Pixel) {
+
+
+
+            for j in y..(y + height) {
+                for i in x..(x + width) {
+                    if(i<0 || j<0 || i>=self.width() as i32 - 1 || j>=self.height() as i32 - 1) {
+                        continue;
+                    }
+                    self.pixels[[j as usize, i as usize]] = color;
+                }
+            }
+        }
     }
 
 
-    enum MixMode {
+    pub enum MixMode {
         Progressive,
         Linear,
         LeftShape,
@@ -134,9 +149,9 @@
         RightOverlayBorder,
     }
 
-    struct Mixer{
-        mix_mode: MixMode,
-        mix_weight: f32,
+    pub struct Mixer{
+        pub mix_mode: MixMode,
+        pub mix_weight: f32,
     }
 
     // use Vec<Vec<Pixel>> as Frame;
@@ -266,7 +281,7 @@
 
 
         // given two frames of pixels, 
-        fn mix(&mut self, first_channel: Frame, second_channel: Frame) -> Frame{
+        pub fn mix(&mut self, first_channel: Frame, second_channel: Frame) -> Frame{
             match self.mix_mode {
                 // Will do a simple crossfade of the two effects, where every effect reaches 100% in the middle of the mix fader.
                 // TODO make this actually correct with 100% at center, I think it's just linear now.
@@ -407,6 +422,93 @@
             frame.update_timestamp();
             return frame;
         }
+    }
+
+    pub struct ExpandingSquares {
+        eo_count: u8,
+        eo_size: u8,
+        eo_growth: u8,
+        eo_objects_pos_x: Vec<u8>,
+        eo_objects_pos_y: Vec<u8>,
+        eo_objects_expand: Vec<u8>,
+        eo_objects_fade: Vec<u8>,
+        eo_objects_col: Vec<Pixel>,
+    }
+
+    impl Animation for ExpandingSquares {
+        fn generate_frame(&mut self, width: u32, height: u32) -> Frame {
+            let mut frame = Frame::new(width, height);
+            frame = ExpandingSquares::squares(self, frame);
+            frame.update_timestamp();
+            return frame;
+        }
+    }
+
+    impl ExpandingSquares{
+        fn squares(&mut self, mut frame: Frame) -> Frame {
+            for j in 0..self.eo_count as usize{
+                let r = (self.eo_objects_col[j].r as f32 * (1f32 - self.eo_objects_fade[j] as f32 / self.eo_growth as f32)) as usize;
+                let g = (self.eo_objects_col[j].g as f32 * (1f32 - self.eo_objects_fade[j] as f32 / self.eo_growth as f32)) as usize;
+                let b = (self.eo_objects_col[j].b as f32 * (1f32 - self.eo_objects_fade[j] as f32 / self.eo_growth as f32)) as usize;
+                let pixel = Pixel::from_rgb(r as u8, g as u8, b as u8);
+                let diameter = self.eo_size + self.eo_objects_expand[j];
+                if (self.eo_objects_expand[j] < self.eo_growth) {
+                    let offset = diameter / 2;
+                    frame.drawRect((self.eo_objects_pos_x[j] as i32-offset as i32), (self.eo_objects_pos_y[j] as i32 - offset as i32), diameter as i32, diameter as i32, pixel);
+                }
+                self.eo_objects_expand[j] += 2;
+                self.eo_objects_fade[j] += 2;
+                if(self.eo_objects_fade[j] >= self.eo_growth){
+                    self.eo_objects_fade[j] = self.eo_growth;
+                }
+                // get random int in range
+                let mut rng = rand::thread_rng();
+                if(self.eo_objects_expand[j] >= self.eo_growth && rng.gen_range(0..100 as u8) < 10){
+                    self.eo_objects_expand[j] = 0;
+                    self.eo_objects_fade[j] = 0;
+                    self.eo_objects_pos_x[j] = rng.gen_range(0..frame.width() as u8);
+                    self.eo_objects_pos_y[j] = rng.gen_range(0..frame.height() as u8);
+                }
+            }
+            return frame;
+        }
+        pub fn new() -> ExpandingSquares {
+            let mut squares = ExpandingSquares{
+                eo_count: 5,
+                eo_size: 10,
+                eo_growth: 5,
+                eo_objects_pos_x: vec![0; 5],
+                eo_objects_pos_y: vec![0; 5],
+                eo_objects_expand: vec![0; 5],
+                eo_objects_fade: vec![0; 5],
+                eo_objects_col: vec![Pixel::from_rgb(0, 0, 0); 5],
+            };
+            let mut rng = rand::thread_rng();
+            for i in 0..squares.eo_count as usize{
+                squares.eo_objects_pos_x[i] = rng.gen_range(0..30 as u8);
+                squares.eo_objects_pos_y[i] = rng.gen_range(0..10 as u8);
+                squares.eo_objects_expand[i] = rng.gen_range(0..squares.eo_growth);
+                squares.eo_objects_fade[i] = 0;
+                squares.eo_objects_col[i] = Pixel::from_rgb(255, 255, 255);
+            }
+            return squares;
+
+
+            // for (int i = 0; i < this.eo_count; ++i) {
+            //     this.eo_objects_pos_x[i] = rnd.nextInt(this.size[0]);
+            //     this.eo_objects_pos_y[i] = rnd.nextInt(this.size[1]);
+            //     this.eo_objects_expand[i] = rnd.nextInt(this.eo_growth);
+            //     this.eo_objects_fade[i] = 0;
+            //     if (this.eo_random) {
+            //         this.eo_objects_col[i] = new Color(rnd.nextInt(256), rnd.nextInt(256), rnd.nextInt(256));
+            //     }
+            //     else {
+            //         this.eo_objects_col[i] = new Color(this.eo_red, this.eo_green, this.eo_blue);
+            //     }
+            // }
+        }
+
+        
     }
             
 

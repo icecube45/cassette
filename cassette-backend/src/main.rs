@@ -29,6 +29,9 @@ use serde::{Serialize, Deserialize};
 use std::thread;
 
 use cassette_backend::RainbowWheel;
+use cassette_backend::ExpandingSquares;
+use cassette_backend::Mixer;
+use cassette_backend::MixMode;
 use cassette_backend::Animation;
 
 
@@ -153,9 +156,18 @@ async fn handle_socket(mut socket: WebSocket, state: Arc<Mutex<State>>) {
             return;
            }
 
-    let mut ani = RainbowWheel::new();
+    let mut rainbow = RainbowWheel::new();
+    let mut squares = ExpandingSquares::new();
+    let mut mixer = Mixer{
+        mix_mode: MixMode::Linear,
+        mix_weight: 50f32,
+    };
     loop {
-        let frame = ani.generate_frame(30, 10);
+        let rainbowFrame = rainbow.generate_frame(30, 10);
+        let squaresFrame = squares.generate_frame(30, 10);
+        let frame = mixer.mix(rainbowFrame, squaresFrame);
+
+
 
 
         let mut json_frame: String = "[".to_string();
