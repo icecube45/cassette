@@ -27,6 +27,8 @@ export class EffectEditorComponent implements OnInit {
     untouchedEffectsWrapper: EffectsWrapper = {activeId: 0, effects: []};
     readonly EffectOptionType = EffectOptionType;
     currentEffect: Effect = {id: 0, name: "", options: []};
+    output_id: number = 0;
+
     id: number = 0;
     mixer_id: number = 0;
     currentMixer: Mixer = {id: 0, options: []};
@@ -37,6 +39,7 @@ export class EffectEditorComponent implements OnInit {
     ngOnInit(): void {
         this.type = String(this.route.snapshot.paramMap.get('type'));
         this.id = Number(this.route.snapshot.paramMap.get('id'));
+        this.output_id=Number(this.route.snapshot.paramMap.get('output_id'));
         if(this.type == "mixer") {
             this.backend.getMixer(this.id).subscribe(mixer => {
                 this.currentMixer = mixer;

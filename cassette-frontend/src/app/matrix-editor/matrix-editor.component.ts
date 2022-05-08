@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router'
 
 
 @Component({
@@ -8,9 +9,12 @@ import { Component, OnInit } from '@angular/core';
 })
 export class MatrixEditorComponent implements OnInit {
 
-  constructor() { }
+  public output_id: number = 0;
+  
+  constructor(private route: ActivatedRoute) { }
 
   ngOnInit(): void {
+    this.output_id = Number(this.route.snapshot.paramMap.get('output_id'));
 
   }
 

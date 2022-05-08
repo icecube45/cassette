@@ -14,6 +14,7 @@ import { DOCUMENT } from '@angular/common';
 export class LiveViewComponent implements OnInit {
     @Input() n_horizontal: number = 0;
     @Input() n_vertical: number = 0;
+    @Input() output_id: number = 0;
 
     gutter_size: number = 2;
 
@@ -34,8 +35,12 @@ export class LiveViewComponent implements OnInit {
     }
 
     private initWebSocket(): void {
-        this.ws = new WebSocket('ws://'+window.location.hostname+':3000');
+        this.ws = new WebSocket('ws://'+window.location.hostname+'/ws');
         this.ws.onmessage = (evt: MessageEvent) => {this.onNewPixelData(evt)};
+        this.ws.onopen = (): void => {
+            this.ws.send(this.output_id.toString());
+        }
+
         this.ws.onerror = (): void => {
             this.ws.close();
         };
@@ -51,7 +56,9 @@ export class LiveViewComponent implements OnInit {
     }
 
     private onNewPixelData(evt: MessageEvent): void {
+        // console.log(evt.data);
         const pixels: Pixel[] = JSON.parse(evt.data);
+        // console.log(pixels);
         for (let i = 0; i < pixels.length; i++) {
             var pixel_element = document.getElementById("pixel_" + i);
             if(pixel_element != null) {

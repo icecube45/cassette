@@ -5,7 +5,7 @@ import { RouterModule, Routes } from '@angular/router';
 
 const routes: Routes = [
     {
-        path: "output/:id",
+        path: "output/:output_id",
         loadChildren: () => import('./matrix-editor/matrix-editor.module').then(m => m.MatrixEditorModule)
     },
     {
