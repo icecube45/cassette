@@ -57,7 +57,8 @@ async fn main() {
             get({
                 let world = world.clone(); 
                 move |body| { get_entity(world, body) }
-            }));
+            })
+    );
 
     tokio::spawn(async move {
         let one_sec = time::Duration::from_millis(1000);
@@ -90,37 +91,20 @@ async fn spawn_entity(world: Arc<RwLock<World>>, extract::Json(payload): extract
     let mut builder = EntityBuilder::new();
     builder.add(Pixel { r: payload.r, g: payload.g, b: payload.b });
     let entity = world.spawn(builder.build());
+
     println!("Spawned entity: {}", entity.id());
     Json(entity)
 }
 
-async fn get_entity(world: Arc<RwLock<World>>, extract::Json(entity): extract::Json<Entity>) -> Json<Pixel> {
+async fn get_entity(world: Arc<RwLock<World>>, extract::Json(entity): extract::Json<Entity>) -> Result<Json<Pixel>, StatusCode> {
     let world = world.read().await;
     let pixel = world.get::<Pixel>(entity);
 
     match pixel {
-        Ok(pixel) => return Json(Pixel { r: pixel.r, g: pixel.g, b: pixel.b }),
+        Ok(pixel) => return Ok(Json(Pixel { r: pixel.r, g: pixel.g, b: pixel.b })),
         Err(err) => {
             println!("Error getting pixel: {:?}", err);
-            return Json(Pixel { r: 0, g: 0, b: 0 });
+            return Err(StatusCode::NOT_FOUND)
         }
     }
-}
-
-async fn handle_error(error: BoxError) -> impl IntoResponse {
-    if error.is::<tower::timeout::error::Elapsed>() {
-        return (StatusCode::REQUEST_TIMEOUT, Cow::from("request timed out"));
-    }
-
-    if error.is::<tower::load_shed::error::Overloaded>() {
-        return (
-            StatusCode::SERVICE_UNAVAILABLE,
-            Cow::from("service is overloaded, try again later"),
-        );
-    }
-
-    (
-        StatusCode::INTERNAL_SERVER_ERROR,
-        Cow::from(format!("Unhandled internal error: {}", error)),
-    )
 }
