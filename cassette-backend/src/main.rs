@@ -1,5 +1,7 @@
 //! Simple in-memory key/value store showing features of axum.
 
+mod animation_pipeline;
+use animation_pipeline::components::{Pixel, Output};
 use axum::{
     body::Bytes,
     error_handling::HandleErrorLayer,
@@ -28,10 +30,7 @@ use tower_http::{trace::TraceLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use tokio::{time::timeout, sync::RwLock};
 use serde::{Serialize, Deserialize};
-
-
 use std::thread;
-
 
 #[tokio::main]
 async fn main() {
@@ -57,8 +56,12 @@ async fn main() {
             get({
                 let world = world.clone(); 
                 move |body| { get_entity(world, body) }
-            })
-    );
+            }))
+        .route("/mod_entity",
+            put({
+                let world = world.clone();
+                move |body| { mod_entity(world, body) }
+            }));
 
     tokio::spawn(async move {
         let one_sec = time::Duration::from_millis(1000);
@@ -66,6 +69,14 @@ async fn main() {
             thread::sleep(one_sec);
             let world = world.read().await;
             println!("{:?}", world.len());
+            //https://docs.rs/hecs/latest/hecs/struct.QueryBorrow.html#method.with
+            // how to query for type in the system...
+            for (id, pixel) in world.query::<&Pixel>()
+                .with::<Output>()    
+                .iter() {
+                    println!("{:?}", id);
+                    println!("{:?}", pixel);
+                    }
         }
     });
 
@@ -77,13 +88,6 @@ async fn main() {
         .serve(app.into_make_service())
         .await
         .unwrap();
-}
-
-#[derive(Bundle, Deserialize, Debug, Serialize)]
-struct Pixel {
-    r: u8,
-    g: u8,
-    b: u8,
 }
 
 async fn spawn_entity(world: Arc<RwLock<World>>, extract::Json(payload): extract::Json<Pixel>) -> Json<Entity> {
@@ -99,7 +103,7 @@ async fn spawn_entity(world: Arc<RwLock<World>>, extract::Json(payload): extract
 async fn get_entity(world: Arc<RwLock<World>>, extract::Json(entity): extract::Json<Entity>) -> Result<Json<Pixel>, StatusCode> {
     let world = world.read().await;
     let pixel = world.get::<Pixel>(entity);
-
+    
     match pixel {
         Ok(pixel) => return Ok(Json(Pixel { r: pixel.r, g: pixel.g, b: pixel.b })),
         Err(err) => {
@@ -107,4 +111,17 @@ async fn get_entity(world: Arc<RwLock<World>>, extract::Json(entity): extract::J
             return Err(StatusCode::NOT_FOUND)
         }
     }
+}
+
+async fn mod_entity(world: Arc<RwLock<World>>, extract::Json(entity): extract::Json<Entity>) -> StatusCode {
+    let mut world = world.write().await;
+    println!("Modified entity: {}", entity.id());
+    match world.insert_one(entity, Output { name: "test".to_string(), width: 100, height: 100 }) {
+        Ok(_) => StatusCode::OK,
+        Err(err) => {
+            println!("Error inserting pixel: {:?}", err);
+            StatusCode::NOT_FOUND
+        }
+    }
+    
 }
