@@ -1,6 +1,6 @@
 use ndarray::Array2;
 
-use super::components::{Pixel};
+use super::components::{Pixel, EffectSettings};
 
 mod rainbow_wheel;
 mod expanding_squares;
@@ -10,34 +10,24 @@ pub struct Frame {
     timestamp: u128
 }
 
-pub struct ExpandingSquares {
-    eo_count: u8,
-    eo_size: u8,
-    eo_growth: u8,
-    eo_objects_pos_x: Vec<u8>,
-    eo_objects_pos_y: Vec<u8>,
-    eo_objects_expand: Vec<u8>,
-    eo_objects_fade: Vec<u8>,
-    eo_objects_col: Vec<Pixel>,
-    current_frame: Frame
-} 
-
-pub struct RainbowWheel {
-    step: u8,
-    current_frame: Frame
+trait Animation {
+    fn animate(&mut self, frame: &mut Frame);
 }
 
-enum Effect {
-    RainbowWheel(RainbowWheel),
-    ExpandingSquares(ExpandingSquares)
+struct Effect<T: Animation> {
+    frame: Frame,
+    effect: T,
 }
 
-impl Effect {
-    pub fn animate(&mut self) {
-        match self {
-            Effect::RainbowWheel(rainbow_wheel) => rainbow_wheel::animate_rainbow(rainbow_wheel.step, &mut rainbow_wheel.current_frame),
-            Effect::ExpandingSquares(_) => todo!(),
-        }
-    }
+fn test() {
+    let test = Effect{
+        frame: Frame{
+            pixels: todo!(),
+            timestamp: 0,
+        },
+        effect: rainbow_wheel::RainbowWheel{
+            step: 0,
+        },
+    };
 }
 

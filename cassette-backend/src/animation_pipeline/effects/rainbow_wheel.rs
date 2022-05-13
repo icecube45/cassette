@@ -1,6 +1,16 @@
 use crate::animation_pipeline::components::Pixel;
 
-use super::Frame;
+use super::{Frame, Animation};
+
+pub struct RainbowWheel {
+    step: u8,
+}
+
+impl Animation for RainbowWheel {
+    fn animate(&mut self, frame: &mut Frame) {
+        animate_rainbow(self.step, frame)
+    }
+}
 
 pub fn animate_rainbow(mut step: u8, frame: &mut Frame) {
     let mut num_pixels_override = frame.pixels.len();

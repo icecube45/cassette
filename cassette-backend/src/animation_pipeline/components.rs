@@ -26,7 +26,7 @@ pub struct Output {
 // This is the struct that gets copied from stage to stage...
 
 
-struct EffectSettings {
+pub struct EffectSettings {
     //pub(crate) active_effect: Effect,
     
 }
