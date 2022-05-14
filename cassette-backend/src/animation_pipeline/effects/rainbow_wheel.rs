@@ -2,6 +2,12 @@ use crate::animation_pipeline::components::Pixel;
 
 use super::Frame;
 
+
+pub struct RainbowWheel {
+    pub step: u8,
+    pub current_frame: Frame
+}
+
 pub fn animate_rainbow(mut step: u8, frame: &mut Frame) {
     let mut num_pixels_override = frame.pixels.len();
     let height = frame.pixels.shape()[1];

@@ -31,6 +31,7 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use tokio::{time::timeout, sync::RwLock};
 use serde::{Serialize, Deserialize};
 use std::thread;
+mod dsp;
 
 #[tokio::main]
 async fn main() {
@@ -65,6 +66,10 @@ async fn main() {
 
     tokio::spawn(async move {
         let one_sec = time::Duration::from_millis(1000);
+
+        dsp::DSP::new();
+
+
         loop {
             thread::sleep(one_sec);
             let world = world.read().await;
