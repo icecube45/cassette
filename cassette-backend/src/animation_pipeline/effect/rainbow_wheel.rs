@@ -1,9 +1,17 @@
-use crate::animation_pipeline::components::Pixel;
+use crate::animation_pipeline::pixel::Pixel;
 
 use super::{Frame, Animate};
 
 pub struct RainbowWheel {
     step: u8,
+}
+
+impl RainbowWheel {
+    pub fn new() -> Self {
+        RainbowWheel {
+            step: 0,
+        }
+    }
 }
 
 impl Animate for RainbowWheel {

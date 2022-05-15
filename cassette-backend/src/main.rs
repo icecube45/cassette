@@ -1,7 +1,6 @@
 //! Simple in-memory key/value store showing features of axum.
 
 mod animation_pipeline;
-use animation_pipeline::components::{Pixel, Output};
 
 mod api;
 //use api::create::create_animation;
@@ -38,6 +37,8 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use tokio::{time::timeout, sync::RwLock};
 use serde::{Serialize, Deserialize};
 use std::thread;
+
+use crate::animation_pipeline::pixel::Pixel;
 
 #[tokio::main]
 async fn main() {

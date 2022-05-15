@@ -1,4 +1,4 @@
-use crate::animation_pipeline::components::Frame;
+use crate::animation_pipeline::frame::Frame;
 
 use super::Mix;
 

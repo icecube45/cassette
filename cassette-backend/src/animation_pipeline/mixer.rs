@@ -7,7 +7,7 @@ mod border;
 
 use std::sync::{Arc, Mutex};
 
-use super::components::Frame;
+use hecs::Entity;
 
 use self::progressive::Progressive;
 use self::linear::Linear;
@@ -16,9 +16,11 @@ use self::intensity::Intensity;
 use self::overlay::Overlay;
 use self::border::Border;
 
+use super::frame::Frame;
 
 pub struct MixerComponent {
     pub(crate) name:          String,
+    pub(crate) entity:        Entity,
     pub(crate) mixer_type:    MixMode,
     pub(crate) weight:        f32,
     pub(crate) channel_a:     Arc<Mutex<Frame>>,
@@ -28,9 +30,11 @@ pub struct MixerComponent {
 
 impl MixerComponent {
     // The reason it's implemented this way is to add some checks later for frame of given size...
-    pub fn new(name: String, mixer_type: MixMode, weight: Option<f32>, channel_a: Option<Arc<Mutex<Frame>>>, channel_b: Option<Arc<Mutex<Frame>>>, output: Option<Arc<Mutex<Frame>>>) -> Result<Self, &'static str> {
+    pub fn new(name: String, entity: Entity, mixer_type: MixMode, weight: Option<f32>, channel_a: Option<Arc<Mutex<Frame>>>, channel_b: Option<Arc<Mutex<Frame>>>, output: Option<Arc<Mutex<Frame>>>) -> Result<Self, &'static str> {
+        // checks for properly sized inputs
         Ok(MixerComponent {
             name,
+            entity,
             mixer_type,
             weight: match weight {
                 Some(w) => w,
