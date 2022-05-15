@@ -22,3 +22,4 @@ tower-http = { version = "0.2.0", features = ["add-extension", "auth", "compress
 rand = "0.8.4"
 cpal = "0.13.5"
 rustfft = "6.0.1"
+realfft = "3.0.0"

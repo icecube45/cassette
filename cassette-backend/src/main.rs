@@ -67,9 +67,6 @@ async fn main() {
     tokio::spawn(async move {
         let one_sec = time::Duration::from_millis(1000);
 
-        dsp::DSP::new();
-
-
         loop {
             thread::sleep(one_sec);
             let world = world.read().await;
@@ -84,6 +81,9 @@ async fn main() {
                     }
         }
     });
+
+    let dsp = dsp::DSP::new();
+
 
 
     // Run our app with hyper
