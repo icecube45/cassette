@@ -1,4 +1,6 @@
-use hecs::Bundle;
+use std::{sync::{Arc, RwLock}, rc::Rc};
+
+use hecs::{Bundle, Entity};
 use serde::{Deserialize, Serialize};
 use ndarray::{Axis, Array2};
 
@@ -9,39 +11,15 @@ pub struct Pixel {
     pub(crate) b: u8,
 }
 
+// output contains references to mixer and effects
 #[derive(Bundle, Deserialize, Debug, Serialize)]
 pub struct Output {
     pub(crate) name: String,
-    pub width: u32,
-    pub height: u32,
+    // other metadata
+    //pub(crate) mixer: 
 }
 
-// //A mixer has an output, 
-// struct mixer {
-//     outputs: Vec<output>,
-//     //inputs: Vec<input>,
-// }
-
-
-// This is the struct that gets copied from stage to stage...
-
-
-pub struct EffectSettings {
-    //pub(crate) active_effect: Effect,
-    
+pub struct Frame {
+    pub pixels: Array2<Pixel>,
+    timestamp: u128
 }
-
-// struct Animation {
-//     pub current_frame: Frame,
-//     pub next_frame: Frame,
-// }
-
-enum Animation2 {
-    Animation,
-
-}
-
-
-
-
-// Animation is a struct that contains an animation function of a given type and returns

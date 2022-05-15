@@ -4,7 +4,6 @@ version = "0.1.0"
 edition = "2021"
 publish = false
 
-
 [dependencies]
 axum = { version = "0.5.3", features = ["ws", "headers"] }
 axum-macros = { version = "0.2.0" }
@@ -20,3 +19,4 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 tower = { version = "0.4", features = ["util", "timeout", "load-shed", "limit"] }
 tower-http = { version = "0.2.0", features = ["add-extension", "auth", "compression-full", "trace"] }
 rand = "0.8.4"
+enum_dispatch = "0.3.8"
