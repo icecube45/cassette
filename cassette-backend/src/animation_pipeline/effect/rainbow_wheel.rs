@@ -1,14 +1,27 @@
-use crate::animation_pipeline::components::Pixel;
+use crate::animation_pipeline::pixel::Pixel;
 
-use super::Frame;
-
+use super::{Frame, Animate};
 
 pub struct RainbowWheel {
-    pub step: u8,
-    pub current_frame: Frame
+    step: u8,
+}
+
+impl RainbowWheel {
+    pub fn new() -> Self {
+        RainbowWheel {
+            step: 0,
+        }
+    }
+}
+
+impl Animate for RainbowWheel {
+    fn animate(&mut self, frame: &mut Frame) {
+        animate_rainbow(self.step, frame)
+    }
 }
 
 pub fn animate_rainbow(mut step: u8, frame: &mut Frame) {
+    // TODO: de-test this. stuff like num_override and matrix bool were used in my test python script but aren't needed here
     let mut num_pixels_override = frame.pixels.len();
     let height = frame.pixels.shape()[1];
     let width  = frame.pixels.shape()[0];

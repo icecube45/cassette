@@ -1,10 +1,7 @@
 use ndarray::Array2;
 
-use super::components::{Pixel};
+use super::pixel::Pixel;
 
-
-pub mod rainbow_wheel;
-pub mod expanding_squares;
 pub struct Frame {
     pub pixels: Array2<Pixel>,
     timestamp: u128
@@ -43,22 +40,3 @@ impl Frame {
         }
     }
 }
-
-
-
-
-
-enum Effect {
-    RainbowWheel(rainbow_wheel::RainbowWheel),
-    ExpandingSquares(expanding_squares::ExpandingSquares),
-}
-
-impl Effect {
-    pub fn animate(&mut self) {
-        match self {
-            Effect::RainbowWheel(rainbow_wheel) => rainbow_wheel::animate_rainbow(rainbow_wheel.step, &mut rainbow_wheel.current_frame),
-            Effect::ExpandingSquares(expanding_squares) => expanding_squares::animate_expanding_squares(expanding_squares.eo_count, expanding_squares.eo_size, expanding_squares.eo_growth, &mut expanding_squares.eo_objects_pos_x, &mut expanding_squares.eo_objects_pos_y, &mut expanding_squares.eo_objects_expand, &mut expanding_squares.eo_objects_fade, &mut expanding_squares.eo_objects_col, &mut expanding_squares.current_frame)
-        }
-    }
-}
-

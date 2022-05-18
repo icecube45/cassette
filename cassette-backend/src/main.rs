@@ -1,7 +1,13 @@
 //! Simple in-memory key/value store showing features of axum.
 
 mod animation_pipeline;
-use animation_pipeline::components::{Pixel, Output};
+
+mod api;
+//use api::create::create_animation;
+
+#[macro_use]
+extern crate enum_dispatch;
+
 use axum::{
     body::Bytes,
     error_handling::HandleErrorLayer,
@@ -33,6 +39,8 @@ use serde::{Serialize, Deserialize};
 use std::thread;
 mod dsp;
 
+use crate::animation_pipeline::pixel::Pixel;
+
 #[tokio::main]
 async fn main() {
     tracing_subscriber::registry()
@@ -50,6 +58,8 @@ async fn main() {
     let app = Router::new()
         .route("/spawn_entity",
             post({
+                //q: is this wrong, do not clone the world rather use a reference?
+                //a: no, https://stackoverflow.com/questions/40984932/what-happens-when-an-arc-is-cloned#:~:text=A%20clone()%20on%20an,it%20owns%20the%20underlying%20object.
                 let world = world.clone();
                 move |body| { spawn_entity(world, body) }
             }))
