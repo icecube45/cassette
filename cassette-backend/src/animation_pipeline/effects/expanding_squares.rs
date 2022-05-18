@@ -32,7 +32,7 @@ pub fn animate_expanding_squares(eo_count: u8, eo_size: u8, eo_growth: u8, eo_ob
             let offset = diameter / 2;
             // yeah this makes sense to be impl on the struct itself
             // https://github.com/icecube45/cassette/blob/backend_start/cassette-backend/src/lib.rs#L101 like here
-            frame.drawRect((eo_objects_pos_x[j] as i32-offset as i32), (eo_objects_pos_y[j] as i32 - offset as i32), diameter as i32, diameter as i32, pixel);
+            frame.draw_rect((eo_objects_pos_x[j] as i32-offset as i32), (eo_objects_pos_y[j] as i32 - offset as i32), diameter as i32, diameter as i32, pixel);
         }
         eo_objects_expand[j] += 2;
         eo_objects_fade[j] += 2;

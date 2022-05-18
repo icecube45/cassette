@@ -82,7 +82,7 @@ async fn main() {
         }
     });
 
-    let dsp = dsp::DSP::new();
+    let dsp_wrapper = dsp::DSPWrapper::new();
 
 
 

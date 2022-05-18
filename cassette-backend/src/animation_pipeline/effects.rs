@@ -32,7 +32,7 @@ impl Frame {
     pub fn height(&self) -> usize {
         self.pixels.shape()[0] as usize
     }
-    pub fn drawRect(&mut self, x: i32, y: i32, width: i32, height: i32, color: Pixel) {
+    pub fn draw_rect(&mut self, x: i32, y: i32, width: i32, height: i32, color: Pixel) {
         for j in y..(y + height) {
             for i in x..(x + width) {
                 if(i<0 || j<0 || i>=self.width() as i32 - 1 || j>=self.height() as i32 - 1) {
