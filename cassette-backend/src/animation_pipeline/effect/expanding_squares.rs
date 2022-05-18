@@ -4,7 +4,7 @@ use crate::animation_pipeline::pixel::Pixel;
 
 use super::{Frame, Animate};
 
-pub(crate) struct ExpandingSquares {
+pub struct ExpandingSquares {
     eo_count: u8,
     eo_size: u8,
     eo_growth: u8,

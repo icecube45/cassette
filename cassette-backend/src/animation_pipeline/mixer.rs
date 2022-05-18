@@ -21,7 +21,7 @@ use super::frame::Frame;
 pub struct MixerComponent {
     pub(crate) name:          String,
     pub(crate) entity:        Entity,
-    pub(crate) mixer_type:    MixMode,
+               mixer_type:    MixMode,
     pub(crate) weight:        f32,
     pub(crate) channel_a:     Arc<Mutex<Frame>>,
     pub(crate) channel_b:     Arc<Mutex<Frame>>,
@@ -30,12 +30,12 @@ pub struct MixerComponent {
 
 impl MixerComponent {
     // The reason it's implemented this way is to add some checks later for frame of given size...
-    pub fn new(name: String, entity: Entity, mixer_type: MixMode, weight: Option<f32>, channel_a: Option<Arc<Mutex<Frame>>>, channel_b: Option<Arc<Mutex<Frame>>>, output: Option<Arc<Mutex<Frame>>>) -> Result<Self, &'static str> {
+    pub fn new(name: String, entity: Entity, weight: Option<f32>, channel_a: Option<Arc<Mutex<Frame>>>, channel_b: Option<Arc<Mutex<Frame>>>, output: Option<Arc<Mutex<Frame>>>) -> Result<Self, &'static str> {
         // checks for properly sized inputs
         Ok(MixerComponent {
             name,
             entity,
-            mixer_type,
+            mixer_type: todo!(),
             weight: match weight {
                 Some(w) => w,
                 None => 0.0,
@@ -54,9 +54,9 @@ impl MixerComponent {
             },
         })
     }
-    pub fn mix(&self) {
+    pub fn mix(&mut self) {
         match self.output.lock() {
-            Ok(output) => *output = self.mixer_type.mix(self.weight, &self.channel_a.lock().unwrap(), &self.channel_b.lock().unwrap()),
+            Ok(mut output) => *output = self.mixer_type.mix(self.weight, &self.channel_a.lock().unwrap(), &self.channel_b.lock().unwrap()),
             Err(_) => todo!(),
         }
     }
