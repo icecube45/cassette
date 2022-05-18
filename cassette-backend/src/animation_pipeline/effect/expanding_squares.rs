@@ -55,18 +55,18 @@ pub fn animate_expanding_squares(eo_count: u8, eo_size: u8, eo_growth: u8, eo_ob
         let height = frame.pixels.shape()[1];
         let width  = frame.pixels.shape()[0];
 
-        if (eo_objects_expand[j] < eo_growth) {
+        if eo_objects_expand[j] < eo_growth {
             let offset = diameter / 2;
-            frame.drawRect((eo_objects_pos_x[j] as i32-offset as i32), (eo_objects_pos_y[j] as i32 - offset as i32), diameter as i32, diameter as i32, pixel);
+            frame.draw_rect(eo_objects_pos_x[j] as i32-offset as i32, eo_objects_pos_y[j] as i32 - offset as i32, diameter as i32, diameter as i32, pixel);
         }
         eo_objects_expand[j] += 2;
         eo_objects_fade[j] += 2;
-        if(eo_objects_fade[j] >= eo_growth){
+        if eo_objects_fade[j] >= eo_growth {
             eo_objects_fade[j] = eo_growth;
         }
         // get random int in range
         let mut rng = rand::thread_rng();
-        if(eo_objects_expand[j] >= eo_growth && rng.gen_range(0..100 as u8) < 10){
+        if eo_objects_expand[j] >= eo_growth && rng.gen_range(0..100 as u8) < 10 {
             eo_objects_expand[j] = 0;
             eo_objects_fade[j] = 0;
             eo_objects_pos_x[j] = rng.gen_range(0..width as u8);

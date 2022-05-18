@@ -1,9 +1,9 @@
 use std::sync::{Arc, Mutex};
 
-use cpal::{BufferSize, StreamConfig};
+use cpal::{StreamConfig};
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
-use realfft::{RealFftPlanner, RealToComplex};
+use realfft::{RealFftPlanner};
 use rustfft::num_complex::Complex;
 use rustfft::num_traits::Zero;
 
