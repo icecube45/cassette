@@ -62,14 +62,15 @@ async fn main() {
         .route("/dsp_ws",
             get({
                 let world = world.clone(); 
-                move |ws, body| { ws_handler( ws, body, world) }
+                move |ws, body| { dsp_ws_handler( ws, body, world) }
             }))
         .route("/mod_entity",
             put({
                 let world = world.clone();
                 move |body| { mod_entity(world, body) }
             }));
-
+            
+    let dsp_wrapper = dsp::DSPWrapper::new(world.clone());
     tokio::spawn(async move {
         let one_sec = time::Duration::from_millis(1000);
 
@@ -87,8 +88,6 @@ async fn main() {
                     }
         }
     });
-
-    let dsp_wrapper = dsp::DSPWrapper::new();
 
 
 
@@ -138,7 +137,7 @@ async fn mod_entity(world: Arc<RwLock<World>>, extract::Json(entity): extract::J
 }
 
 
-async fn ws_handler(
+async fn dsp_ws_handler(
     ws: WebSocketUpgrade, 
     user_agent: Option<TypedHeader<headers::UserAgent>>, 
     state: Arc<RwLock<World>>
@@ -147,12 +146,12 @@ async fn ws_handler(
         println!("`{}` connected", user_agent.as_str());
     }
     ws.on_upgrade({
-        |ws| handle_socket(ws, state)
+        |ws| dsp_handle_socket(ws, state)
     })
     
 }
 
-async fn handle_socket(mut socket: WebSocket, world: Arc<RwLock<World>>) {
+async fn dsp_handle_socket(mut socket: WebSocket, world: Arc<RwLock<World>>) {
     while let Some(msg) = socket.recv().await {
         let msg = if let Ok(msg) = msg {
             msg
@@ -165,24 +164,4 @@ async fn handle_socket(mut socket: WebSocket, world: Arc<RwLock<World>>) {
     let socket = Arc::new(Mutex::new(socket));
 
     world.spawn(({socket.clone()},));
-}
-
-fn dsp_thingy(world: Arc<RwLock<World>>) {
-    let world = world.read();
-
-    world.query::<&Arc<Mutex<WebSocket>>>().iter().for_each(|(entity, socket)| {
-        let rt = Runtime::new().unwrap();
-        rt.block_on(async {
-            if socket.lock()
-                .send(todo!("test"))
-                .await
-                .is_err() 
-            {
-                if world.despawn(entity).is_err() {
-                    println!("Error despawning entity");
-                }
-                return;
-            }
-        });
-    });
 }

@@ -1,11 +1,15 @@
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc};
 
+use axum::extract::ws::{WebSocket, Message};
 use cpal::{StreamConfig};
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
+use hecs::World;
+use parking_lot::{Mutex, RwLock};
 use realfft::{RealFftPlanner};
 use rustfft::num_complex::Complex;
 use rustfft::num_traits::Zero;
+use tokio::runtime::Runtime;
 
 
 pub struct DSPWrapper {
@@ -14,8 +18,8 @@ pub struct DSPWrapper {
 }
 
 impl DSPWrapper {
-    pub fn new() -> DSPWrapper {
-        let ret = DSP::new();
+    pub fn new(world: Arc<RwLock<World>>) -> DSPWrapper {
+        let ret = DSP::new(world);
         DSPWrapper { dsp: ret.0, stream: ret.1 }
     }
 }
@@ -24,12 +28,13 @@ pub struct DSP{
     fft_planner: RealFftPlanner::<f64>,
     buffer_size: usize,
     pub spectrum: Vec<Complex<f64>>,
+    world: Arc<RwLock<World>>
 
 }
 
 
 impl DSP{
-    pub fn new() -> (Arc<Mutex<DSP>>, cpal::Stream) {
+    pub fn new(world: Arc<RwLock<World>>) -> (Arc<Mutex<DSP>>, cpal::Stream) {
         
         let host = cpal::default_host();
         let input_device = host.default_input_device().unwrap();
@@ -48,6 +53,7 @@ impl DSP{
             // fft: Arc::new(RealFftPlanner::new().plan_r2c(buffer_size)),
             buffer_size: 0,
             spectrum: vec![Complex::zero(); 0],
+            world
         };
 
         let dsp_arc: Arc<Mutex<DSP>> = Arc::new(Mutex::new(dsp));
@@ -75,7 +81,7 @@ impl DSP{
     }
     
     fn input_data_fn(dsp: Arc<Mutex<DSP>>, data: &[f32]) {
-        let mut dsp = dsp.lock().unwrap();
+        let mut dsp = dsp.lock();
         dsp.process_data(data);
      
         // println!("DSP");
@@ -100,5 +106,32 @@ impl DSP{
         self.spectrum = spectrum;
         // println!("{:?}", spectrum);
 
+
+        // build a json string from spectrum values
+        let mut json_string = String::new();
+        json_string.push_str("[");
+        for i in 0..self.spectrum.len() {
+            json_string.push_str(&format!("{:?},", self.spectrum[i].re));
+        }
+        json_string.pop();
+        json_string.push_str("]");
+        let world = self.world.read();
+
+        world.query::<&Arc<Mutex<WebSocket>>>().iter().for_each(|(entity, socket)| {
+            let rt = Runtime::new().unwrap();
+            rt.block_on(async {
+                if socket.lock()
+                    // .send(Message::Text(String::from(json_string.clone())))
+                    .send(Message::Text("hello".to_string()))
+                    .await
+                    .is_err() 
+                {
+                    println!("Failed to send message");
+                    // if world.despawn(entity).is_err() {
+                    //     println!("Error despawning entity");
+                    // }
+                }
+            });
+        });
     }
 }
