@@ -170,7 +170,7 @@ async fn handle_socket(mut socket: WebSocket, world: Arc<RwLock<World>>) {
 fn dsp_thingy(world: Arc<RwLock<World>>) {
     let world = world.read();
 
-    world.query::<&Arc<Mutex<WebSocket>>>().iter().for_each(|(id, socket)| {
+    world.query::<&Arc<Mutex<WebSocket>>>().iter().for_each(|(entity, socket)| {
         let rt = Runtime::new().unwrap();
         rt.block_on(async {
             if socket.lock()
@@ -178,7 +178,10 @@ fn dsp_thingy(world: Arc<RwLock<World>>) {
                 .await
                 .is_err() 
             {
-                    return;
+                if world.despawn(entity).is_err() {
+                    println!("Error despawning entity");
+                }
+                return;
             }
         });
     });
