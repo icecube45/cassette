@@ -82,7 +82,7 @@ export class AudioViewComponent implements OnInit, AfterViewInit {
 
 
     private onNewFFTData(evt: MessageEvent): void {
-        console.log(evt.data);
+        // console.log(evt.data);
         // const bins: FFT_Bin[] = JSON.parse(evt.data);
         const bin_msg = JSON.parse(evt.data);
         const bins = bin_msg.bins;

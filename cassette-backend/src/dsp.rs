@@ -109,20 +109,20 @@ impl DSP{
 
         // build a json string from spectrum values
         let mut json_string = String::new();
-        json_string.push_str("[");
+        json_string.push_str("{\"bins\":[");
         for i in 0..self.spectrum.len() {
             json_string.push_str(&format!("{:?},", self.spectrum[i].re));
         }
         json_string.pop();
-        json_string.push_str("]");
+        json_string.push_str("]}");
         let world = self.world.read();
 
         world.query::<&Arc<Mutex<WebSocket>>>().iter().for_each(|(entity, socket)| {
             let rt = Runtime::new().unwrap();
             rt.block_on(async {
                 if socket.lock()
-                    // .send(Message::Text(String::from(json_string.clone())))
-                    .send(Message::Text("hello".to_string()))
+                    .send(Message::Text(String::from(json_string.clone())))
+                    // .send(Message::Text("hello".to_string()))
                     .await
                     .is_err() 
                 {

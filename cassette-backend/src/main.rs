@@ -152,14 +152,14 @@ async fn dsp_ws_handler(
 }
 
 async fn dsp_handle_socket(mut socket: WebSocket, world: Arc<RwLock<World>>) {
-    while let Some(msg) = socket.recv().await {
-        let msg = if let Ok(msg) = msg {
-            msg
-        } else {
-            // client disconnected
-            return;
-        };
-    }
+    // while let Some(msg) = socket.recv().await {
+    //     let msg = if let Ok(msg) = msg {
+    //         msg
+    //     } else {
+    //         // client disconnected
+    //         return;
+    //     };
+    // }
     let mut world = world.write();
     let socket = Arc::new(Mutex::new(socket));
 
