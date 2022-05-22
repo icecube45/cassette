@@ -37,13 +37,13 @@ impl DSP{
     pub fn new(world: Arc<RwLock<World>>) -> (Arc<Mutex<DSP>>, cpal::Stream) {
         
         let host = cpal::default_host();
-        let input_device = host.default_input_device().unwrap();
-        let mut config: StreamConfig = input_device.default_input_config().expect("Failed to get default input config").into();
+        let output_device = host.default_output_device().unwrap();
+        let mut default_config: StreamConfig = output_device.default_output_config().expect("Failed to get default output config").into();
 
         // for each supported config
-        for config in input_device.supported_input_configs().expect("Failed to get supported input configs") {
-            // println!("{:?}", config);
-        }
+        // for config in input_device.supported_input_configs().expect("Failed to get supported input configs") {
+        //     // println!("{:?}", config);
+        // }
 
      
         // let mut real_planner = RealFftPlanner::<f64>::new();
@@ -60,8 +60,8 @@ impl DSP{
 
         let send_to_callback = dsp_arc.clone();
 
-        let input_stream = input_device.build_input_stream(
-            &config, 
+        let input_stream = output_device.build_input_stream(
+            &default_config, 
             {
                 move |data, _: &_| DSP::input_data_fn(send_to_callback.clone(), data)
             },
