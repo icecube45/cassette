@@ -1,5 +1,6 @@
 import { DOCUMENT } from '@angular/common';
 import { AfterViewInit, Component, ElementRef, Inject, Input, OnInit, ViewChild } from '@angular/core';
+import { min } from 'rxjs';
 
 
 
@@ -23,6 +24,9 @@ export class AudioViewComponent implements OnInit, AfterViewInit {
     @ViewChild('canvas')
     public canvas!: ElementRef;
     private ctx!: CanvasRenderingContext2D;  
+    @ViewChild('canvas_container')
+    private canvas_container!: ElementRef;
+    
 
     gutter: number = 1;
 
@@ -32,12 +36,12 @@ export class AudioViewComponent implements OnInit, AfterViewInit {
 
     
     frequency_triggers: Frequency_Trigger[] = [
-        {threshold: 0.5, freq_start: 0, freq_end: 1000},
-        {threshold: 0.25, freq_start: 1000, freq_end: 4000},
-        {threshold: 0.75, freq_start: 4000, freq_end: 4500},
-        {threshold: 0.1, freq_start: 6000, freq_end: 8000},
-        {threshold: 0.2, freq_start: 9000, freq_end: 12000},
-        {threshold: 0.4, freq_start: 12000, freq_end: 12300}
+        // {threshold: 0.5, freq_start: 0, freq_end: 1000},
+        // {threshold: 0.25, freq_start: 1000, freq_end: 4000},
+        // {threshold: 0.75, freq_start: 4000, freq_end: 4500},
+        // {threshold: 0.1, freq_start: 6000, freq_end: 8000},
+        // {threshold: 0.2, freq_start: 9000, freq_end: 12000},
+        // {threshold: 0.4, freq_start: 12000, freq_end: 12300}
     ]
     ws!: WebSocket;
 
@@ -96,7 +100,7 @@ export class AudioViewComponent implements OnInit, AfterViewInit {
         // get length of bins and determine pixel size
         let bin_size = (this.ctx.canvas.width - (bins.length-1)*this.gutter) / bins.length;
         for (let i = 0; i < bins.length; i++) {
-            this.ctx.fillStyle = '#00' + (bins[i]*128+128).toString(16).split('.')[0].padStart(2, '0') + '00';
+            this.ctx.fillStyle = '#00' + (Math.min(bins[i]*(255-64)+64,255)).toString(16).split('.')[0].padStart(2, '0') + '00';
 
             
 

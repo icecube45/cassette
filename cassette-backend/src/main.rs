@@ -1,6 +1,8 @@
 //! Simple in-memory key/value store showing features of axum.
 
 mod animation_pipeline;
+mod mel_filter;
+
 
 mod api;
 //use api::create::create_animation;
@@ -92,7 +94,7 @@ async fn main() {
 
 
     // Run our app with hyper
-    let addr = SocketAddr::from(([127, 0, 0, 1], 8080));
+    let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
     tracing::debug!("listening on {}", addr);
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
