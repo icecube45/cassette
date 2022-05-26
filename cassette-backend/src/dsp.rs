@@ -5,7 +5,7 @@ use axum::extract::ws::{WebSocket, Message};
 use cpal::{StreamConfig};
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
-use hecs::World;
+use hecs::{World, Entity};
 use ndarray::{ArrayBase, Data, Dimension, Array, Axis, Slice, s, Array1, Array2};
 use ndarray_ndimage::gaussian_filter1d;
 use ndarray_stats::QuantileExt;
@@ -268,8 +268,19 @@ impl DSP{
         json_string.push_str("]}");
         // println!("{}", json_string);
         let world = self.world.read();
+        let mut query = world.query::<&Arc<Mutex<WebSocket>>>();
 
-        world.query::<&Arc<Mutex<WebSocket>>>().iter().for_each(|(entity, socket)| {
+        // this is hacky but ok...
+
+        let mut websockets: Vec<(Entity, Arc<Mutex<WebSocket>>)> = Vec::new();
+        query.iter().for_each(|(entity, socket)| {
+            websockets.push((entity.clone(), socket.clone()));
+        });
+        drop(query);
+        drop(world);
+        
+        
+        for (entity, socket) in websockets {
             let rt = Runtime::new().unwrap();
             rt.block_on(async {
                 if socket.lock()
@@ -279,12 +290,14 @@ impl DSP{
                     .is_err() 
                 {
                     println!("Failed to send message");
-                    // if world.despawn(entity).is_err() {
-                    //     println!("Error despawning entity");
-                    // }
+                    let mut world = self.world.write();
+                    if world.despawn(entity).is_err() {
+                        println!("Error despawning entity");
+                    }
                 }
             });
-        });
+        }
+
     }
 }
 
