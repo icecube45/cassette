@@ -20,7 +20,7 @@ use crate::mel_filter;
 
 
 const ROLLING_HISTORY_COUNT: usize = 2;
-const FPS: usize = 60;
+const FPS: usize = 30;
 const NUM_FFT_BINS: usize = 64;
 const MIN_FREQ: f64 = 200.0;
 const MAX_FREQ: f64 = 12000.0;
