@@ -14,6 +14,7 @@ use realfft::{RealFftPlanner};
 use rustfft::num_complex::Complex;
 use rustfft::num_traits::Zero;
 use tokio::runtime::Runtime;
+use aubio::{Onset, Tempo};
 use crate::mel_filter;
 
 
@@ -54,6 +55,8 @@ pub struct DSP{
     transposed_melmat: Array2<f64>,
     pub mel_spectrum: Array1<f64>,
     pub num_fft_bins: usize,
+    onset: Arc<Mutex<Onset>>,
+    // tempo: Arc<Mutex<Tempo>>,
 }
 
 
@@ -81,6 +84,14 @@ impl DSP{
         let num_fft_bins = samples_per_frame*ROLLING_HISTORY_COUNT/2;
         let melmat = mel_filter::compute_melmat(NUM_FFT_BINS as u32, MIN_FREQ, MAX_FREQ, num_fft_bins as u32, default_config.sample_rate.0).0;
         let transposed_melmat = melmat.reversed_axes();
+        
+        let onset = Onset::new(aubio::OnsetMode::SpecDiff, samples_per_frame*ROLLING_HISTORY_COUNT as usize, samples_per_frame, default_config.sample_rate.0 as u32).expect("Failed to create onset");
+        let tempo = Tempo::new(aubio::OnsetMode::SpecDiff, samples_per_frame*ROLLING_HISTORY_COUNT as usize, samples_per_frame, default_config.sample_rate.0 as u32).expect("Failed to create tempo");
+        // create ARCs from the above
+        let onset_arc = Arc::new(Mutex::new(onset));
+        // let tempo_arc = Arc::new(Mutex::new(tempo));
+
+
         let dsp = DSP{
             fft_planner: RealFftPlanner::<f64>::new(),
             // fft: Arc::new(RealFftPlanner::new().plan_r2c(buffer_size)),
@@ -99,6 +110,9 @@ impl DSP{
             transposed_melmat: transposed_melmat,
             mel_spectrum: Array::zeros([num_fft_bins]),
             num_fft_bins: num_fft_bins,
+            onset: onset_arc.clone(),
+            // tempo: tempo_arc.clone(),
+           
         };
 
         let dsp_arc: Arc<Mutex<DSP>> = Arc::new(Mutex::new(dsp));
@@ -167,6 +181,9 @@ impl DSP{
         // }
         // self.dispatch_count += 1;
 
+        // lock onset and tempo
+        let mut onset = self.onset.lock();
+        // let mut tempo = self.tempo.lock();
 
 
 
@@ -186,6 +203,17 @@ impl DSP{
         if self.rolling_sample_window.len() > in_data.len()*ROLLING_HISTORY_COUNT {
             self.rolling_sample_window.drain(0..in_data.len());
         }
+
+        let aubio_data = self.rolling_sample_window.clone();
+        // do tempo detection
+        // tempo.do_result(&aubio_data);
+        // do onset detection
+        onset.do_result(&aubio_data);
+
+        // println!("{:?}", tempo.get_bpm());
+        println!("{:?}", onset.get_onset());
+
+
         
         let N = self.rolling_sample_window.len();
         let N_zeros = 2_i32.pow((N as f32).log2().ceil() as u32) as i32 - N as i32;
