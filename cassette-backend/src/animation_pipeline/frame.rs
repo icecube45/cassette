@@ -30,9 +30,9 @@ impl Frame {
         self.pixels.shape()[0] as usize
     }
     pub fn draw_rect(&mut self, x: i32, y: i32, width: i32, height: i32, color: Pixel) {
-        for j in y..(y + height) {
-            for i in x..(x + width) {
-                if i<0 || j<0 || i>=self.width() as i32 - 1 || j>=self.height() as i32 - 1 {
+        for j in y..(y + height + 1) {
+            for i in x..(x + width + 1) {
+                if i<0 || j<0 || i>self.width() as i32 - 1 || j>self.height() as i32 - 1 {
                     continue;
                 }
                 self.pixels[[j as usize, i as usize]] = color;

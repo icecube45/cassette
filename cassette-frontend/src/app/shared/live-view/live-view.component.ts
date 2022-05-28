@@ -35,7 +35,7 @@ export class LiveViewComponent implements OnInit {
     }
 
     private initWebSocket(): void {
-        this.ws = new WebSocket('ws://'+window.location.hostname+'/ws');
+        this.ws = new WebSocket('ws://'+window.location.hostname+':8080/ws');
         this.ws.onmessage = (evt: MessageEvent) => {this.onNewPixelData(evt)};
         this.ws.onopen = (): void => {
             this.ws.send(this.output_id.toString());

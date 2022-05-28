@@ -1,3 +1,4 @@
+use core::fmt;
 use std::ops::Mul;
 
 #[derive(Debug, Clone, Copy)]
@@ -5,6 +6,12 @@ pub struct Pixel {
     pub(crate) r: u8,
     pub(crate) g: u8,
     pub(crate) b: u8,
+}
+
+impl fmt::Display for Pixel {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{{\"r\":{}, \"g\":{}, \"b\":{}, \"patched\":true}}", self.r, self.g, self.b)
+    }
 }
 
 impl Pixel{

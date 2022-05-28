@@ -1,14 +1,20 @@
 pub mod rainbow_wheel;
 pub mod expanding_squares;
+pub mod FFT;
+pub mod audio_scroll;
+pub mod audio_energy;
 
 use std::sync::{Arc, Mutex};
 
 use self::rainbow_wheel::RainbowWheel;
 use self::expanding_squares::ExpandingSquares;
+use self::FFT::FFTAnimation;
+use self::audio_scroll::AudioScroll;
+use self::audio_energy::AudioEnergy;
 
 use super::frame::Frame;
 
-#[enum_dispatch]
+// #[enum_dispatch]
 
 pub trait Animate {
     fn animate(&mut self, frame: &mut Frame);
@@ -30,7 +36,7 @@ impl EffectComponent {
     }
     // is this right? no idea! but it allows for the effect to decide how it wants to animate
     pub fn animate(&mut self) {
-        self.effect.animate(&mut self.current_frame.lock().unwrap());
+        // self.effect.animate(&mut self.current_frame.lock().unwrap());
     }
 }
 
@@ -38,6 +44,9 @@ impl EffectComponent {
 pub enum Effect {
     ExpandingSquares,
     RainbowWheel,
+    FFTAnimation,
+    AudioScroll,
+    AudioEnergy,
     // ...
 }
 
@@ -46,6 +55,7 @@ impl Effect {
         vec![
             Effect::ExpandingSquares(ExpandingSquares::new()),
             Effect::RainbowWheel(RainbowWheel::new()),
+            // Effect::FFTAnimation(FFTAnimation::new(Arc::new(Mutex::new(DSP::new())))),
         ]
     }
 }

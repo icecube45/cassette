@@ -21,7 +21,7 @@ use crate::mel_filter;
 
 const ROLLING_HISTORY_COUNT: usize = 2;
 const FPS: usize = 30;
-const NUM_FFT_BINS: usize = 64;
+const NUM_FFT_BINS: usize = 30;
 const MIN_FREQ: f64 = 200.0;
 const MAX_FREQ: f64 = 12000.0;
 
@@ -52,6 +52,8 @@ pub struct DSP{
     // first_time: Instant,
     hamming_window: Array1<f64>,
     transposed_melmat: Array2<f64>,
+    pub mel_spectrum: Array1<f64>,
+    pub num_fft_bins: usize,
 }
 
 
@@ -94,7 +96,9 @@ impl DSP{
             // dispatch_count: 0,
             // first_time: Instant::now(),
             hamming_window: window,
-            transposed_melmat: transposed_melmat
+            transposed_melmat: transposed_melmat,
+            mel_spectrum: Array::zeros([num_fft_bins]),
+            num_fft_bins: num_fft_bins,
         };
 
         let dsp_arc: Arc<Mutex<DSP>> = Arc::new(Mutex::new(dsp));
@@ -233,7 +237,11 @@ impl DSP{
             mel[[i]] = mel[[i]] / self.mel_gain.get(i);
         }
         
-        mel = self.mel_smoothing.update_with_array(&mel);
+        
+        let mel = self.mel_smoothing.update_with_array(&mel);
+         
+        // only keep 0..NUM_FFT_BINS of mel spectrum
+        self.mel_spectrum = mel.slice_move(s![..NUM_FFT_BINS]);
 
 
         // build a json string from spectrum values
@@ -257,7 +265,7 @@ impl DSP{
         // }
 
         for i in 0..NUM_FFT_BINS {
-            json_string.push_str(&format!("{},", mel[[i]]));
+            json_string.push_str(&format!("{},", self.mel_spectrum[[i]]));
         }
 
 
@@ -339,7 +347,7 @@ where
 
 
 // exponential smoothing filter
-struct ExpFilter{
+pub struct ExpFilter{
     alpha_rise: f64,
     alpha_decay: f64,
     value: Array1<f64>,

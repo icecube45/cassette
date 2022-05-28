@@ -10,6 +10,7 @@ mod api;
 #[macro_use]
 extern crate enum_dispatch;
 
+use animation_pipeline::{frame, effect::{Animate, audio_scroll::AudioScroll, audio_energy::AudioEnergy, FFT::FFTAnimation}};
 use axum::{
     body::Bytes,
     error_handling::HandleErrorLayer,
@@ -24,6 +25,7 @@ use axum::{
     Json
     
 };
+use dsp::DSP;
 use hecs::{World, Entity, EntityBuilder};
 use parking_lot::{Mutex, RwLock};
 use core::time;
@@ -38,6 +40,9 @@ use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use tokio::{time::timeout, runtime::Runtime};
 use std::thread;
 mod dsp;
+use crate::animation_pipeline::effect::FFT;
+use crate::animation_pipeline::effect::audio_scroll;
+use crate::animation_pipeline::effect::audio_energy;
 
 use crate::animation_pipeline::{pixel::Pixel, output::Output};
 
@@ -54,6 +59,7 @@ async fn main() {
     // initialize our shared state
     let world = Arc::new(RwLock::new(World::default()));
 
+    let dsp_wrapper = dsp::DSPWrapper::new(world.clone());
     // initialize the networking configuration
     let app = Router::new()
         // .route("/get_entity",
@@ -66,13 +72,18 @@ async fn main() {
                 let world = world.clone(); 
                 move |ws, body| { dsp_ws_handler( ws, body, world) }
             }))
+        .route(
+            "/ws",
+            get({
+                move |ws, user_agent| ws_handler(ws, user_agent, dsp_wrapper.dsp.clone())
+            }),
+        )
         .route("/mod_entity",
             put({
                 let world = world.clone();
                 move |body| { mod_entity(world, body) }
             }));
             
-    let dsp_wrapper = dsp::DSPWrapper::new(world.clone());
     tokio::spawn(async move {
         let one_sec = time::Duration::from_millis(1000);
 
@@ -138,7 +149,6 @@ async fn mod_entity(world: Arc<RwLock<World>>, extract::Json(entity): extract::J
     
 }
 
-
 async fn dsp_ws_handler(
     ws: WebSocketUpgrade, 
     user_agent: Option<TypedHeader<headers::UserAgent>>, 
@@ -152,6 +162,97 @@ async fn dsp_ws_handler(
     })
     
 }
+
+async fn ws_handler(
+    ws: WebSocketUpgrade, 
+    user_agent: Option<TypedHeader<headers::UserAgent>>, 
+    dsp: Arc<Mutex<DSP>>,
+) -> impl IntoResponse {
+    if let Some(TypedHeader(user_agent)) = user_agent {
+        println!("Websocket Client connected: `{}`", user_agent.as_str());
+    }
+    ws.on_upgrade({
+        |ws| handle_socket(ws, dsp)
+    })
+    
+}
+
+
+
+async fn handle_socket(mut socket: WebSocket, dsp: Arc<Mutex<DSP>>) {
+    
+    if let Ok(msg) = timeout(Duration::from_secs(5), socket.recv()).await { // timeout after 5 seconds
+        if let Some(msg) = msg {                                   // if we received a message of Some type
+            match msg {                                           // perform pattern matching on the message
+                Ok(msg) => {                                      // if the message is of type OK
+                    match msg { // match the message
+                        Message::Text(t) => {
+                            if t.len() > 1 {
+                                println!("Client is too chatty :(");
+                            }
+                            println!("Client is live view of output {:?}", t);
+                        }
+                        Message::Binary(_) => {
+                            println!("Client sent binary data - we weren't expecting this");
+                        }
+                        Message::Ping(_) => {
+                            println!("socket ping");
+                        }
+                        Message::Pong(_) => {
+                            println!("socket pong");
+                        }
+                        Message::Close(_) => {
+                            println!("Client disconnected :(");
+                            return;
+                        }
+                    }
+                }
+                Err(_) => { // if the message is of type Err
+                    println!("We probably shouldn't see this"); // print something
+                    return;
+                }
+            }
+         }
+        } else { // if we did not receive a message in the given timeframe then error
+            //prob do some pattern matching on Err(_) to catch what kind of error happend
+            println!("Client didn't welcome us :(");
+            return;
+           }
+
+    // create an FFT animation object
+    let mut fft = FFTAnimation::new(dsp.clone());
+
+    loop {
+        let mut frame = frame::Frame::new(30, 10);
+        fft.animate(&mut frame);
+        let mut json_frame: String = "[".to_string();
+        for pixel in frame.pixels.iter() {
+            json_frame.push_str(&format!("{},", pixel));
+        }
+        json_frame.pop();
+        json_frame.push(']');
+        socket.send(Message::Text(json_frame)).await.unwrap();
+        tokio::time::sleep(Duration::from_millis(15)).await;
+        // let mut it = pixels.iter().peekable();
+        // while let Some(pixel) = it.next() {
+        //     // serialize it and build json array
+        //     let json = serde_json::to_string(&pixel).unwrap();
+        //     // add it to frame
+        //     frame.push_str(&json);
+        //     // add comma if not last element
+        //     if it.peek().is_some() {
+        //         frame.push_str(",");
+        //     }
+        // }
+        // frame.push_str("]");
+        // if socket.send(Message::Text(frame)).await.is_err() {
+        //     println!("Client disconnected :(");
+        //     return;
+        // }
+        // tokio::time::sleep(std::time::Duration::from_millis(30)).await;
+    }
+}
+
 
 async fn dsp_handle_socket(mut socket: WebSocket, world: Arc<RwLock<World>>) {
     // while let Some(msg) = socket.recv().await {
