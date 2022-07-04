@@ -59,6 +59,8 @@ pub struct DSP{
     // tempo: Arc<Mutex<Tempo>>,
 }
 
+unsafe impl Send for DSP {}
+
 
 impl DSP{
     pub fn new(world: Arc<RwLock<World>>) -> (Arc<Mutex<DSP>>, cpal::Stream) {
@@ -211,7 +213,7 @@ impl DSP{
         onset.do_result(&aubio_data);
 
         // println!("{:?}", tempo.get_bpm());
-        println!("{:?}", onset.get_onset());
+        //println!("{:?}", onset.get_onset());
 
 
         
