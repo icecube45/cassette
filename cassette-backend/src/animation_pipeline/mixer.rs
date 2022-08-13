@@ -1,9 +1,9 @@
-mod progressive;
-mod linear;
-mod shape;
-mod intensity;
-mod overlay;
-mod border;
+pub mod progressive;
+pub mod linear;
+pub mod shape;
+pub mod intensity;
+pub mod overlay;
+pub mod border;
 
 use std::sync::{Arc, Mutex};
 

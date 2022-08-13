@@ -2,6 +2,7 @@ use ndarray::Array2;
 
 use super::pixel::Pixel;
 
+#[derive(Clone)]
 pub struct Frame {
     pub pixels: Array2<Pixel>,
     timestamp: u128
@@ -38,5 +39,8 @@ impl Frame {
                 self.pixels[[j as usize, i as usize]] = color;
             }
         }
+    }
+    pub fn copy_from(&mut self, other: &Frame) {
+        self.pixels = other.pixels.clone();
     }
 }

@@ -22,6 +22,17 @@ impl Pixel{
             b,
         }
     }
+    pub fn from_rgba(r: u8, g: u8, b: u8, a: u8) -> Pixel {
+        // treat black as alpha, scalre r g and b accordingly
+        let r = (r as f32 * (a as f32 / 255.0)) as u8;
+        let g = (g as f32 * (a as f32 / 255.0)) as u8;
+        let b = (b as f32 * (a as f32 / 255.0)) as u8;
+        Pixel{
+            r,
+            g,
+            b,
+        }
+    }
     pub fn black() -> Pixel {
         Pixel{
             r: 0,

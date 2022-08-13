@@ -15,17 +15,23 @@ use rustfft::num_complex::Complex;
 use rustfft::num_traits::Zero;
 use tokio::runtime::Runtime;
 use aubio::{Onset, Tempo};
+use tokio::sync::mpsc::{self, Sender, Receiver};
+
 use crate::mel_filter;
 
 
 
 
 const ROLLING_HISTORY_COUNT: usize = 2;
-const FPS: usize = 30;
+const FPS: usize = 60;
 const NUM_FFT_BINS: usize = 30;
 const MIN_FREQ: f64 = 200.0;
 const MAX_FREQ: f64 = 12000.0;
+const VOLUME_THRESHOLD: f64 = 1e-7;
 
+pub trait TempoCallback {
+    fn on_tempo(&mut self);
+}
 pub struct DSPWrapper {
     pub dsp: Arc<Mutex<DSP>>,
     pub stream: cpal::Stream
@@ -56,9 +62,10 @@ pub struct DSP{
     pub mel_spectrum: Array1<f64>,
     pub num_fft_bins: usize,
     onset: Arc<Mutex<Onset>>,
-    // tempo: Arc<Mutex<Tempo>>,
+    tempo_callback_channels: Vec<Sender<bool>>,
 }
 
+unsafe impl Send for DSP {}
 
 impl DSP{
     pub fn new(world: Arc<RwLock<World>>) -> (Arc<Mutex<DSP>>, cpal::Stream) {
@@ -76,7 +83,17 @@ impl DSP{
         println!("Running with Configuration: {:?}", default_config);
         // let mut real_planner = RealFftPlanner::<f64>::new();
 
-        let samples_per_frame = (default_config.sample_rate.0 as f32 / FPS as f32) as usize;
+        let mut samples_per_frame = (default_config.sample_rate.0 as f32 / FPS as f32) as usize;
+
+        // find the power of two that is closes to the number of samples
+        let mut power_of_two_sample_size = 1;
+        while power_of_two_sample_size < samples_per_frame {
+            power_of_two_sample_size *= 2;
+        }
+        power_of_two_sample_size;
+
+
+
         let mut window = ndarray::Array::linspace(0.0, 0.0, samples_per_frame*ROLLING_HISTORY_COUNT);
         for i in 0..window.len() {
             window[[i]] = 0.54 - 0.46 * (2.0 * std::f64::consts::PI * i as f64 / window.len() as f64).cos();
@@ -84,12 +101,14 @@ impl DSP{
         let num_fft_bins = samples_per_frame*ROLLING_HISTORY_COUNT/2;
         let melmat = mel_filter::compute_melmat(NUM_FFT_BINS as u32, MIN_FREQ, MAX_FREQ, num_fft_bins as u32, default_config.sample_rate.0).0;
         let transposed_melmat = melmat.reversed_axes();
+
         
-        let onset = Onset::new(aubio::OnsetMode::SpecDiff, samples_per_frame*ROLLING_HISTORY_COUNT as usize, samples_per_frame, default_config.sample_rate.0 as u32).expect("Failed to create onset");
-        let tempo = Tempo::new(aubio::OnsetMode::SpecDiff, samples_per_frame*ROLLING_HISTORY_COUNT as usize, samples_per_frame, default_config.sample_rate.0 as u32).expect("Failed to create tempo");
+
+        
+        let onset = Onset::new(aubio::OnsetMode::SpecDiff, 2048, 800, default_config.sample_rate.0 as u32).expect("Failed to create onset");
+        let tempo = Tempo::new(aubio::OnsetMode::Mkl, 2048, 800, default_config.sample_rate.0 as u32).expect("Failed to create tempo");
         // create ARCs from the above
         let onset_arc = Arc::new(Mutex::new(onset));
-        // let tempo_arc = Arc::new(Mutex::new(tempo));
 
 
         let dsp = DSP{
@@ -111,7 +130,7 @@ impl DSP{
             mel_spectrum: Array::zeros([num_fft_bins]),
             num_fft_bins: num_fft_bins,
             onset: onset_arc.clone(),
-            // tempo: tempo_arc.clone(),
+            tempo_callback_channels: vec![],
            
         };
 
@@ -134,6 +153,10 @@ impl DSP{
         return (dsp_arc, input_stream);
     }
 
+    pub fn add_tempo_channel(&mut self, channel: Sender<bool>) {
+        self.tempo_callback_channels.push(channel);
+    }
+
 
     fn err_fn(err: cpal::StreamError) {
         eprintln!("an error occurred on stream: {}", err);
@@ -148,7 +171,6 @@ impl DSP{
         // print length of data
         // println!("{:?}", data.len());
     }
-
 
 
 
@@ -183,8 +205,12 @@ impl DSP{
 
         // lock onset and tempo
         let mut onset = self.onset.lock();
-        // let mut tempo = self.tempo.lock();
 
+        // get maximum sample value
+        let max_sample = data.iter().fold(0.0, |acc, &x| if x > acc { x } else { acc });
+        if(max_sample < VOLUME_THRESHOLD as f32) {
+            return;
+        }
 
 
 
@@ -196,6 +222,7 @@ impl DSP{
         for (i, x) in data.iter().enumerate() {
             // normalize samples between 0 and 1
             in_data[i] = *x as f64 / 32768.0;
+            // in_data[i] = *x as f64;
         }
         // add new data to rolling sample window
         self.rolling_sample_window.extend_from_slice(in_data.as_slice());
@@ -204,29 +231,67 @@ impl DSP{
             self.rolling_sample_window.drain(0..in_data.len());
         }
 
-        let aubio_data = self.rolling_sample_window.clone();
-        // do tempo detection
-        // tempo.do_result(&aubio_data);
-        // do onset detection
-        onset.do_result(&aubio_data);
-
-        // println!("{:?}", tempo.get_bpm());
-        println!("{:?}", onset.get_onset());
-
-
+        
+        
         
         let N = self.rolling_sample_window.len();
         let N_zeros = 2_i32.pow((N as f32).log2().ceil() as u32) as i32 - N as i32;
         let rolling_sample_copy = self.rolling_sample_window.clone();
         let mut data_sample_array = ndarray::Array::from_vec(rolling_sample_copy);
         
-
+        
         // apply window to data
         data_sample_array = &self.hamming_window * &data_sample_array;
-
+        
         // pad with N_zeros
         let mut padded_array = pad_with_zeros(&mut data_sample_array, vec![[0,N_zeros as usize]]);
+        let aubio_data = padded_array.clone().to_vec();
         
+        // create copy of rolling_sample_window that is f32
+        let mut aubio_data_f32 = vec![0.0; aubio_data.len()];
+        for (i, x) in aubio_data.iter().enumerate() {
+            aubio_data_f32[i] = (*x * 32768.0) as f32;
+        }
+
+        // println!("len of aubio_data is {}, len of incoming samples is {}", aubio_data.len(), data.len());
+        // do tempo detection
+        // tempo.do_result(&aubio_data);
+        // do onset detection
+        // create onset vector
+        let mut onset_vec = vec![0.0; aubio_data.len()];
+        let result = onset.do_result(&aubio_data_f32).expect("Failed to do onset detection");
+        // let tempo_result = tempo.do_result(&aubio_data_f32).expect("Failed to do tempo detection") as u32;
+        // println!("{}", onset_vec[0]);
+        // println!("{}", onset.get_threshold());
+        // onset.set_threshold(0.3);
+        // println!("{:?}", result);
+
+        let beat = result != 0.0;
+
+        if(beat){
+            // call each tempo callback
+            for channel in self.tempo_callback_channels.iter() {
+                channel.blocking_send(true);
+            }
+        }
+        // let mut beat = false;
+        // // println!("{:?}", tempo.get_last());
+        // if(onset.get_last() != self.last_beat){
+        //     self.last_beat = onset.get_last();
+        //     beat = true;
+        //     // println!("----------X");
+        // }
+        // else{
+        //     // println!("-");
+        // }
+        
+
+        // let beat = onset_vec[0] >= 1.2;
+        // println!("{:?}", beat);
+        // let beat = false;
+        // println!("{:?}", onset.get_onset());
+
+
         // perform fft
         let r2c = self.fft_planner.plan_fft_forward(padded_array.len());
         let mut spectrum = r2c.make_output_vec();
@@ -278,6 +343,12 @@ impl DSP{
         json_string.push_str(&format!("{}", MIN_FREQ));
         json_string.push_str(",\"max\":");
         json_string.push_str(&format!("{}", MAX_FREQ));
+
+        if(beat) {
+            json_string.push_str(",\"beat\":true");
+        } else {
+            json_string.push_str(",\"beat\":false");
+        }
 
         json_string.push_str(",\"bins\":[");
 

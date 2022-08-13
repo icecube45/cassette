@@ -3,6 +3,7 @@ pub mod expanding_squares;
 pub mod FFT;
 pub mod audio_scroll;
 pub mod audio_energy;
+pub mod image_display;
 
 use std::sync::{Arc, Mutex};
 
@@ -11,6 +12,7 @@ use self::expanding_squares::ExpandingSquares;
 use self::FFT::FFTAnimation;
 use self::audio_scroll::AudioScroll;
 use self::audio_energy::AudioEnergy;
+use self::image_display::ImageDisplay;
 
 use super::frame::Frame;
 
@@ -47,13 +49,14 @@ pub enum Effect {
     FFTAnimation,
     AudioScroll,
     AudioEnergy,
+    ImageDisplay,
     // ...
 }
 
 impl Effect {
     pub fn new() -> Vec<Effect> {
         vec![
-            Effect::ExpandingSquares(ExpandingSquares::new()),
+            // Effect::ExpandingSquares(ExpandingSquares::new()),
             Effect::RainbowWheel(RainbowWheel::new()),
             // Effect::FFTAnimation(FFTAnimation::new(Arc::new(Mutex::new(DSP::new())))),
         ]

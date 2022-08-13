@@ -10,7 +10,7 @@ mod api;
 #[macro_use]
 extern crate enum_dispatch;
 
-use animation_pipeline::{frame, effect::{Animate, audio_scroll::AudioScroll, audio_energy::AudioEnergy, FFT::FFTAnimation}};
+use animation_pipeline::{frame, effect::{Animate, audio_scroll::AudioScroll, audio_energy::AudioEnergy, FFT::FFTAnimation, expanding_squares::ExpandingSquares, image_display::ImageDisplay}, mixer::{self, Mix}, patcher::Patcher};
 use axum::{
     body::Bytes,
     error_handling::HandleErrorLayer,
@@ -220,11 +220,20 @@ async fn handle_socket(mut socket: WebSocket, dsp: Arc<Mutex<DSP>>) {
            }
 
     // create an FFT animation object
-    let mut fft = FFTAnimation::new(dsp.clone());
+    // let mut fft = FFTAnimation::new(dsp.clone());
+    // let mut squares = ExpandingSquares::new(dsp.clone());
+    let mut image_display = ImageDisplay::new(dsp.clone());
+    // let mut scroll = FFTAnimation::new(dsp.clone());
+    // let mut mixer = mixer::overlay::Overlay{};
+    // let mut patcher = Patcher::new();
 
     loop {
         let mut frame = frame::Frame::new(30, 10);
-        fft.animate(&mut frame);
+        // let mut frame_scroll = frame::Frame::new(30, 10);
+        // squares.animate(&mut frame);
+        image_display.animate(&mut frame);
+        // scroll.animate(&mut frame_scroll);
+        // let frame = mixer.mix(0.0, &mut frame, &frame_scroll);
         let mut json_frame: String = "[".to_string();
         for pixel in frame.pixels.iter() {
             json_frame.push_str(&format!("{},", pixel));

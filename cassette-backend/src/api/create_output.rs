@@ -32,7 +32,7 @@ async fn get_new_output(world: Arc<RwLock<World>>) -> Json<EntityResponse> {
 
 fn create_new_effect_set(mut world: World) -> Vec<Entity> {
     let effects = [
-        { Effect::ExpandingSquares(ExpandingSquares::new()) },
+        // { Effect::ExpandingSquares(ExpandingSquares::new()) },
         { Effect::RainbowWheel(RainbowWheel::new()) },
     ];
 
