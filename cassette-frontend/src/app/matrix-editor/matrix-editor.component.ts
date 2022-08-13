@@ -1,6 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router'
-
+import { AngularDraggableModule } from 'angular2-draggable';
 
 @Component({
   selector: 'app-matrix-editor',

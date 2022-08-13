@@ -84,19 +84,23 @@ export class AudioViewComponent implements OnInit, AfterViewInit {
         
     }
 
+    beatFillStyle = '#ff0000';
 
     private onNewFFTData(evt: MessageEvent): void {
-        // console.log(evt.data);
         // const bins: FFT_Bin[] = JSON.parse(evt.data);
         const bin_msg = JSON.parse(evt.data);
         const bins = bin_msg.bins;
 
         // clear the canvas
         this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+        // console.log(bin_msg.beat)
         if(bin_msg.beat) {
-            this.ctx.fillStyle = '#FFFF00';
-            this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+            // console.log("Beat!");
+            // swap beat fill style
+            this.beatFillStyle = this.beatFillStyle === '#ff0000' ? '#0000ff' : '#ff0000';
         }
+        this.ctx.fillStyle = this.beatFillStyle;
+        this.ctx.fillRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
         // get length of bins and determine pixel size
         let bin_size = (this.ctx.canvas.width - (bins.length-1)*this.gutter) / bins.length;
         for (let i = 0; i < bins.length; i++) {

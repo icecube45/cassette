@@ -9,8 +9,57 @@ export const EFFECTS: EffectsWrapper =
 {
     activeId: 1,
     effects: [
+        <Effect>{
+            id: 1,
+            name: 'Image Effect 1',
+            options: [
+                <BooleanOption>{
+                    id: 1,
+                    name: 'Advance GIF on beat',
+                    type: EffectOptionType.Boolean,
+                    value: false
+                },
+                <SelectOption>{
+                    id: 2,
+                    name: 'Image',
+                    type: EffectOptionType.Select,
+                    options: ['https://substackcdn.com/image/fetch/f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fbucketeer-e05bbc84-baa3-437e-9518-adb32be77984.s3.amazonaws.com%2Fpublic%2Fimages%2F05b87bec-b910-4de7-b93a-f65327c20da9_960x648.png', 'https://ice45.link/9JPD.gif', 'https://ice45.link/0mcx.png', 'https://ice45.link/utZQ.png', 'https://ice45.link/9JPD.gif', 'https://ice45.link/0mcx.png', 'https://ice45.link/utZQ.png', 'https://ice45.link/9JPD.gif', 'https://ice45.link/0mcx.png', 'https://ice45.link/utZQ.png', 'https://ice45.link/9JPD.gif', 'https://ice45.link/0mcx.png', 'https://ice45.link/utZQ.png', 'https://ice45.link/9JPD.gif', 'https://ice45.link/0mcx.png', 'https://ice45.link/utZQ.png', 'https://ice45.link/9JPD.gif', 'https://ice45.link/0mcx.png', 'https://ice45.link/utZQ.png'],
+                    value: 'https://ice45.link/utZQ.png'
+                },
+                <AnalogOption>{
+                    id: 3,
+                    name: 'Position X',
+                    type: EffectOptionType.Analog,
+                    value: 0,
+                    min: 1,
+                    max: 30,
+                    step: 1
+                },
+                <AnalogOption>{
+                    id: 4,
+                    name: 'Position Y',
+                    type: EffectOptionType.Analog,
+                    value: 0,
+                    min: 1,
+                    max: 30,
+                    step: 1
+                },
+                <AnalogOption>{
+                    id: 5,
+                    name: 'Scale',
+                    type: EffectOptionType.Analog,
+                    value: 1,
+                    min: 0.1,
+                    max: 5,
+                    step: 0.1
+                },
+
+    
+            ]
+        }
+        ,
     <Effect>{
-        id: 1,
+        id: 2,
         name: 'Effect 1',
         options: [
             <AnalogOption>{
@@ -43,7 +92,7 @@ export const EFFECTS: EffectsWrapper =
         ]
     },
     <Effect>{
-        id: 2,
+        id: 3,
         name: 'Effect 2',
         options: [
             <BooleanOption>{
@@ -74,8 +123,8 @@ export const EFFECTS: EffectsWrapper =
                 value: '#bada55'
             },
         ]
-    }
-    ]
+    },
+]
 };
 
 

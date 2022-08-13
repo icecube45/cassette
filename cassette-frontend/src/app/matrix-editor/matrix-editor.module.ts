@@ -20,6 +20,7 @@ import {FormsModule, ReactiveFormsModule} from '@angular/forms';
 import { MatInputModule } from '@angular/material/input'; 
 import { ColorSketchModule } from 'ngx-color/sketch';
 import {MatDialogModule} from '@angular/material/dialog'; 
+import { AngularDraggableModule } from 'angular2-draggable';
 
 
 @NgModule({
@@ -47,6 +48,7 @@ import {MatDialogModule} from '@angular/material/dialog';
     MatInputModule,
     ReactiveFormsModule,
     MatDialogModule,
+    AngularDraggableModule,
   ],
 })
 export class MatrixEditorModule { }

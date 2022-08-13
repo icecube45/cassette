@@ -1,5 +1,5 @@
-
-<live-view [n_vertical]=10 [n_horizontal]=30 [output_id]="output_id"></live-view>
+<live-view #live_view id="live-view" class="drag-boundary" [n_vertical]=10 [n_horizontal]=30 [output_id]="output_id"  >
+</live-view>
 <mat-card>
     <mat-card-title *ngIf="type=='channel'">
         Channel {{this.id}}
@@ -22,14 +22,26 @@
         <mat-card-content>
             <div *ngFor="let effectOption of currentEffect.options">
                 <div class="option-container">
-                    <label>{{effectOption.name}}</label>
+                    <label *ngIf="effectOption.name.toLowerCase().indexOf('image') === -1">{{effectOption.name}}</label>
                     <label *ngIf="effectOption.type === EffectOptionType.Analog">{{$any(effectOption).value}}</label>
                     <mat-form-field appearance="fill"
-                        *ngIf="effectOption.type === EffectOptionType.Select">
+                        *ngIf="effectOption.type === EffectOptionType.Select && effectOption.name.toLowerCase().indexOf('image') === -1">
                         <mat-select [(value)]="$any(effectOption).value" (selectionChange)="onEffectOptionChange()">
                             <mat-option *ngFor="let option of $any(effectOption).options" [value]="option">{{option}}</mat-option>
                         </mat-select>
+                        
                     </mat-form-field>
+                    <!-- If the name does contain "image", then we want to create a row of images to choose from, instead of using usual selector -->
+                    <div class="image-selector" *ngIf="effectOption.type === EffectOptionType.Select && effectOption.name.toLowerCase().indexOf('image') !== -1">
+                        <!-- <mat-grid-list cols={{$any(effectOption).options.length}} rowHeight="1:1">
+                            <mat-grid-tile *ngFor="let image of $any(effectOption).options" (click)="onEffectOptionChange()">
+                                <img class="tile-image" [src]="image"  >
+                            </mat-grid-tile>
+                        </mat-grid-list> -->
+                        <div class="image-selector-tile" *ngFor="let image of $any(effectOption).options" (click)="onImageSelected(image)">
+                            <img class="tile-image" [src]="image"  >
+                        </div>
+                    </div>
                     <button mat-button class="color_swatch" *ngIf="effectOption.type === EffectOptionType.Color" (click)="openColorPicker($any(effectOption))" [style.background]="$any(effectOption).value"></button>
                     <mat-checkbox
                     [(ngModel)]="$any(effectOption).value"
@@ -49,7 +61,7 @@
                     *ngIf="effectOption.type === EffectOptionType.Analog"
                     (change)="onEffectOptionChange()"
                 >
-                ></mat-slider>
+                </mat-slider>
             </div>
         </mat-card-content>
     </mat-card>

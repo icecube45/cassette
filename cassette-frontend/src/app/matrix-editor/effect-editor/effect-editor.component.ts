@@ -1,4 +1,4 @@
-import { Component, OnInit, Inject, EventEmitter } from '@angular/core';
+import { Component, OnInit, Inject, EventEmitter, ViewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router'
 
 
@@ -15,6 +15,7 @@ import { ColorEvent } from 'ngx-color';
 import { BackendService } from 'src/app/services/backend.service';
 import { MatSelectChange } from '@angular/material/select';
 import { on } from 'ws';
+import { LiveViewComponent } from 'src/app/shared/live-view/live-view.component';
 
 @Component({
   selector: 'effect-editor',
@@ -22,6 +23,8 @@ import { on } from 'ws';
   styleUrls: ['./effect-editor.component.css']
 })
 export class EffectEditorComponent implements OnInit {
+    @ViewChild('live_view')
+    live_view!: LiveViewComponent;
 
     effectsWrapper: EffectsWrapper = {activeId: 0, effects: []};
     untouchedEffectsWrapper: EffectsWrapper = {activeId: 0, effects: []};
@@ -93,6 +96,11 @@ export class EffectEditorComponent implements OnInit {
         console.log("Apply");
     }
 
+    onImageSelected(image: string) {
+        // call the live view to update the image
+        // this.live_view.setActiveImage(image);
+        
+    }
 
 
     hexToRgb(hex: string) {

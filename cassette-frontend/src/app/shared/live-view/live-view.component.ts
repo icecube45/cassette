@@ -34,7 +34,14 @@ export class LiveViewComponent implements OnInit {
         this.initWebSocket();
     }
 
+    ngOnDestroy(): void {
+        console.log("Destroying matrix live view");
+        this.closeWebSocket();
+    }
+
     private initWebSocket(): void {
+        console.log("initializing websocket");
+        this.closeWebSocket();
         this.ws = new WebSocket('ws://'+window.location.hostname+':8080/ws');
         this.ws.onmessage = (evt: MessageEvent) => {this.onNewPixelData(evt)};
         this.ws.onopen = (): void => {
@@ -42,17 +49,27 @@ export class LiveViewComponent implements OnInit {
         }
 
         this.ws.onerror = (): void => {
-            this.ws.close();
+            this.closeWebSocket();
         };
        
         this.ws.onclose = (): void => {
             console.log("live view websocket closed, trying again in a second")
-
+            this.closeWebSocket();
             setTimeout(() => {
                 this.initWebSocket();
               }, 1000);
         }
         console.log("Trying to connect to cassette live view websocket")
+    }
+
+    private closeWebSocket(): void {
+        if(this.ws != null){
+            this.ws.removeAllListeners?.('open');
+            this.ws.removeAllListeners?.('message');
+            this.ws.removeAllListeners?.('close');
+            this.ws.removeAllListeners?.('error');
+            this.ws.close();
+        }
     }
 
     private onNewPixelData(evt: MessageEvent): void {
