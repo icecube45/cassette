@@ -23,7 +23,7 @@ pub struct ImageDisplay {
     tempo_channel_rx: mpsc::Receiver<bool>,
     last_frame: Frame,
     image: image::DynamicImage,
-    frames: Vec<image::Frame>,
+    frames: Vec<DynamicImage>,
     frame_index: usize,
     is_gif: bool,
 } 
@@ -31,15 +31,22 @@ pub struct ImageDisplay {
 impl ImageDisplay {
     pub fn new(dsp: Arc<Mutex<DSP>>) -> Self {
         let (tx, rx): (Sender<bool>, Receiver<bool>) = mpsc::channel(10);
-        let is_gif = true;
+        let is_gif = false;
         let mut image = DynamicImage::new_rgb8(0, 0);
         // create empty frames
-        let mut frames = Vec::<image::Frame>::new();
+        let mut frames = Vec::<DynamicImage>::new();
         if(is_gif){
             let file_in = std::fs::File::open("doge.gif").unwrap();
             let decoder = GifDecoder::new(file_in).unwrap();
             let frames_native = decoder.into_frames();
-            frames = frames_native.collect_frames().expect("error decoding gif");
+            let gif_frames = frames_native.collect_frames().expect("error decoding gif");
+            for gif_frame in gif_frames{
+                let rgba = gif_frame.into_buffer();
+                frames.push(DynamicImage::ImageRgba8(rgba));
+
+            }
+            // convert to image
+            // convert rgba to image
             
         }
         else{
@@ -52,11 +59,11 @@ impl ImageDisplay {
                 let file = file.unwrap();
                 let path = file.path();
                 let display = path.display();
-                let mut file_in = std::fs::File::open(path).expect(&format!("could not read {}", display));
+                let mut file_in = std::fs::File::open(&path).expect(&format!("could not read {}", display));
                 let mut buf = Vec::<u8>::new();
                 file_in.read_to_end(&mut buf).expect(&format!("could not read {}", display));
                 let image = image::load_from_memory(&buf).expect(&format!("could not read {}", display));
-                let frame = image.into_frame();
+                let frame = image;
                 frames.push(frame);
                 i += 1;
             }
@@ -103,19 +110,12 @@ impl ImageDisplay{
         }
         if(self.new_image || self.tempo_event) {
             if(self.tempo_event) {
-                if(self.is_gif){
-                   // grab next frame
-                     self.frame_index = self.frame_index + 1;
-                    if(self.frame_index >= self.frames.len()) {
-                        self.frame_index = 0;
-                    }
-                    let gif_frame = self.frames[self.frame_index].clone();
-                    // convert to image
-                    let rgba = gif_frame.into_buffer();
-                    // convert rgba to image
-                    self.image = DynamicImage::ImageRgba8(rgba);
+                self.frame_index = self.frame_index + 1;
+                if(self.frame_index >= self.frames.len()) {
+                    self.frame_index = 0;
                 }
-            }
+                self.image = self.frames[self.frame_index].clone();
+        }
 
 
             println!("new image");
@@ -123,21 +123,15 @@ impl ImageDisplay{
             let img_width = img.width() as u32;
             let img_height = img.height() as u32;
             // let img_pixels = img.pixels();
-            println!("{} {}", img_width, img_height);
-
+            
             // calculate best way to resize image to fit within frame while maintaining aspect ratio
             let mut img_scale = 1.0;
             let mut img_width_scale = 1.0;
             let mut img_height_scale = 1.0;
-            if(img_width > img_height) {
-                img_width_scale = (frame.width() as f32) / (img_width as f32);
-                img_height_scale = (frame.height() as f32) / (img_height as f32);
-                img_scale = img_width_scale;
-            } else {
-                img_width_scale = (frame.width() as f32) / (img_width as f32);
-                img_height_scale = (frame.height() as f32) / (img_height as f32);
-                img_scale = img_height_scale;
-            }
+            img_width_scale = (frame.width() as f32) / (img_width as f32);
+            img_height_scale = (frame.height() as f32) / (img_height as f32);
+            img_scale =f32::min(img_width_scale, img_height_scale);
+           
             let img_width_scaled = (img_width as f32) * img_scale;
             let img_height_scaled = (img_height as f32) * img_scale;
             // resize image
@@ -145,7 +139,7 @@ impl ImageDisplay{
             // let img_resized_pixels = img_resized.pixels();
             let img_resized_width = img_resized.width() as u32;
             let img_resized_height = img_resized.height() as u32;
-            println!("{} {}", img_resized_width, img_resized_height);
+            println!("{}x{} resized to {}x{}", img_width, img_height, img_resized_width, img_resized_height);
 
             // draw image to frame
             for x in 0..img_resized_width {

@@ -15,7 +15,7 @@ import { ColorEvent } from 'ngx-color';
 import { BackendService } from 'src/app/services/backend.service';
 import { MatSelectChange } from '@angular/material/select';
 import { on } from 'ws';
-import { LiveViewComponent } from 'src/app/shared/live-view/live-view.component';
+import { LiveViewComponent } from 'src/app/shared/live-view-canvas/live-view.component';
 
 @Component({
   selector: 'effect-editor',

@@ -223,16 +223,17 @@ async fn handle_socket(mut socket: WebSocket, dsp: Arc<Mutex<DSP>>) {
     // let mut fft = FFTAnimation::new(dsp.clone());
     // let mut squares = ExpandingSquares::new(dsp.clone());
     let mut image_display = ImageDisplay::new(dsp.clone());
-    // let mut scroll = FFTAnimation::new(dsp.clone());
+    // let mut scroll = AudioScroll::new(dsp.clone());
     // let mut mixer = mixer::overlay::Overlay{};
     // let mut patcher = Patcher::new();
 
     loop {
-        let mut frame = frame::Frame::new(30, 10);
+        let mut frame = frame::Frame::new(100, 100);
         // let mut frame_scroll = frame::Frame::new(30, 10);
         // squares.animate(&mut frame);
         image_display.animate(&mut frame);
-        // scroll.animate(&mut frame_scroll);
+        // fft.animate(&mut frame);
+        // scroll.animate(&mut frame);
         // let frame = mixer.mix(0.0, &mut frame, &frame_scroll);
         let mut json_frame: String = "[".to_string();
         for pixel in frame.pixels.iter() {

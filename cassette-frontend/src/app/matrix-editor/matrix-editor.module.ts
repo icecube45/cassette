@@ -5,7 +5,7 @@ import { MatrixEditorRoutingModule } from './matrix-editor-routing.module';
 import { MatrixEditorComponent } from './matrix-editor.component';
 import { EffectEditorComponent } from './effect-editor/effect-editor.component';
 import { ColorPickerDialog } from './effect-editor/effect-editor.component';
-import { LiveViewComponent } from '../shared/live-view/live-view.component';
+import { LiveViewComponent } from '../shared/live-view-canvas/live-view.component';
 import { MatGridListModule } from '@angular/material/grid-list'; 
 import { MatExpansionModule } from '@angular/material/expansion'; 
 import { MatIconModule } from '@angular/material/icon';
