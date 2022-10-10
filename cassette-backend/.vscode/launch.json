@@ -5,54 +5,14 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Cargo launch",
-            "cargo": {
-                "args": [
-                    "build",
-                    "--lib"
-                ]
-            },
-            "program": "${cargo:program}",
-            "args": []
-        },
-        {
-            "type": "lldb",
+            "type": "cppvsdbg",
             "request": "launch",
             "name": "Debug executable 'cassette-backend'",
-            "cargo": {
-                "args": [
-                    "build",
-                    "--bin=cassette-backend",
-                    "--package=cassette-backend"
-                ],
-                "filter": {
-                    "name": "cassette-backend",
-                    "kind": "bin"
-                }
-            },
+            "program": "${workspaceRoot}/target/debug/cassette-backend.exe",
             "args": [],
-            "cwd": "${workspaceFolder}"
+            "cwd": "${workspaceFolder}",
+            "console": "internalConsole",
+            "preLaunchTask": "rust: cargo build"
         },
-        {
-            "type": "lldb",
-            "request": "launch",
-            "name": "Debug unit tests in executable 'cassette-backend'",
-            "cargo": {
-                "args": [
-                    "test",
-                    "--no-run",
-                    "--bin=cassette-backend",
-                    "--package=cassette-backend"
-                ],
-                "filter": {
-                    "name": "cassette-backend",
-                    "kind": "bin"
-                }
-            },
-            "args": [],
-            "cwd": "${workspaceFolder}"
-        }
     ]
 }

@@ -10,17 +10,14 @@ mod api;
 #[macro_use]
 extern crate enum_dispatch;
 
-use animation_pipeline::{frame, effect::{Animate, audio_scroll::AudioScroll, audio_energy::AudioEnergy, FFT::FFTAnimation, expanding_squares::ExpandingSquares, image_display::ImageDisplay}, mixer::{self, Mix}, patcher::Patcher};
 use axum::{
-    body::Bytes,
-    error_handling::HandleErrorLayer,
-    extract::{ContentLengthLimit, Path,
+    extract::{
         ws::{Message, WebSocket, WebSocketUpgrade},
-        TypedHeader, self
+        TypedHeader, self, Path
     },
     http::StatusCode,
     response::IntoResponse,
-    routing::{get, post, put},
+    routing::{get, put},
     Router,
     Json
     
@@ -30,21 +27,18 @@ use hecs::{World, Entity, EntityBuilder};
 use parking_lot::{Mutex, RwLock};
 use core::time;
 use std::{
-    borrow::Cow,
-    collections::HashMap,
     net::SocketAddr,
     sync::Arc,
-    time::Duration,
+    time::Duration, collections::HashMap,
 };
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-use tokio::{time::timeout, runtime::Runtime};
+use tokio::{time::timeout};
 use std::thread;
 mod dsp;
-use crate::animation_pipeline::effect::FFT;
-use crate::animation_pipeline::effect::audio_scroll;
-use crate::animation_pipeline::effect::audio_energy;
 
 use crate::animation_pipeline::{pixel::Pixel, output::Output};
+
+
 
 #[tokio::main]
 async fn main() {
@@ -60,6 +54,17 @@ async fn main() {
     let world = Arc::new(RwLock::new(World::default()));
 
     let dsp_wrapper = dsp::DSPWrapper::new(world.clone());
+
+
+    let api_routing = Router::new()
+        .route("/output/:output_id/mixers/:mixer_id",
+            get({
+                let world = world.clone(); 
+                move |ws, body| { dsp_ws_handler( ws, body, world) }
+            }));
+                
+
+
     // initialize the networking configuration
     let app = Router::new()
         // .route("/get_entity",
@@ -67,6 +72,7 @@ async fn main() {
         //         let world = world.clone(); 
         //         move |body| { get_entity(world, body) }
         //     }))
+        .nest("/api", api_routing)
         .route("/dsp_ws",
             get({
                 let world = world.clone(); 
@@ -87,19 +93,19 @@ async fn main() {
     tokio::spawn(async move {
         let one_sec = time::Duration::from_millis(1000);
 
-        loop {
-            thread::sleep(one_sec);
-            let world = world.read();
-            println!("{:?}", world.len());
-            //https://docs.rs/hecs/latest/hecs/struct.QueryBorrow.html#method.with
-            // how to query for type in the system...
-            for (id, pixel) in world.query::<&Pixel>()
-                .with::<Output>()    
-                .iter() {
-                    println!("{:?}", id);
-                    println!("{:?}", pixel);
-                    }
-        }
+        // loop {
+        //     thread::sleep(one_sec);
+        //     let world = world.read();
+        //     // println!("{:?}", world.len());
+        //     //https://docs.rs/hecs/latest/hecs/struct.QueryBorrow.html#method.with
+        //     // how to query for type in the system...
+        //     for (id, pixel) in world.query::<&Pixel>()
+        //         .with::<Output>()    
+        //         .iter() {
+        //             // println!("{:?}", id);
+        //             // println!("{:?}", pixel);
+        //             }
+        // }
     });
 
 
@@ -113,6 +119,12 @@ async fn main() {
         .unwrap();
 }
 
+async fn mixer_get(Path(params): Path<HashMap<String, String>>) {
+    let output_id = params.get("output_id");
+    let mixer_id = params.get("mixer_id");
+}
+
+
 async fn spawn_entity(world: Arc<RwLock<World>>, extract::Json(payload): extract::Json<Pixel>) -> Json<Entity> {
     let mut world = world.write();
     let mut builder = EntityBuilder::new();
@@ -123,6 +135,30 @@ async fn spawn_entity(world: Arc<RwLock<World>>, extract::Json(payload): extract
     Json(entity)
 }
 
+
+async fn spawn_output(world: Arc<RwLock<World>>, extract::Json(payload): extract::Json<Pixel>, dsp: Arc<Mutex<DSP>>) -> Json<Entity> {
+    let mut world = world.write();
+    let mut builder = EntityBuilder::new();
+    builder.add(Output::new(100, 100, dsp.clone()));
+    let entity = world.spawn(builder.build());
+
+    println!("Spawned entity: {}", entity.id());
+    Json(entity)
+}
+
+// async fn get_output(world: Arc<RwLock<World>>, extract::Json(entity): extract::Json<Entity>) -> Result<Output, StatusCode> {
+//     let world = world.read()
+//     let output = world.get::<Output>(entity);
+//     match output {
+//         Ok(pixel) => return Ok(output),
+//         Err(err) => {
+//             println!("Error getting pixel: {:?}", err);
+//             return Err(StatusCode::NOT_FOUND)
+//         }
+//     }
+// }
+
+
 async fn get_entity(world: Arc<RwLock<World>>, extract::Json(entity): extract::Json<Entity>) -> Result<Json<Pixel>, StatusCode> {
     let world = world.read();
     let pixel = world.get::<Pixel>(entity);
@@ -130,22 +166,26 @@ async fn get_entity(world: Arc<RwLock<World>>, extract::Json(entity): extract::J
     match pixel {
         Ok(pixel) => return Ok(Json(Pixel { r: pixel.r, g: pixel.g, b: pixel.b })),
         Err(err) => {
-            println!("Error getting pixel: {:?}", err);
+            // println!("Error getting pixel: {:?}", err);
             return Err(StatusCode::NOT_FOUND)
         }
     }
 }
 
 async fn mod_entity(world: Arc<RwLock<World>>, extract::Json(entity): extract::Json<Entity>) -> StatusCode {
-    let mut world = world.write();
-    println!("Modified entity: {}", entity.id());
-    match world.insert_one(entity, Output { name: "test".to_string(), width: 100, height: 100 }) {
-        Ok(_) => StatusCode::OK,
-        Err(err) => {
-            println!("Error inserting pixel: {:?}", err);
-            StatusCode::NOT_FOUND
-        }
-    }
+    // let mut world = world.write();
+    // println!("Modified entity: {}", entity.id());
+    // match world.insert_one(entity, Output {
+    //                             name: "test".to_string(), 
+    //                             width: 100, 
+    //                             height: 100 }) {
+    //     Ok(_) => StatusCode::OK,
+    //     Err(err) => {
+    //         println!("Error inserting pixel: {:?}", err);
+    //         StatusCode::NOT_FOUND
+    //     }
+    // }
+    StatusCode::OK
     
 }
 
@@ -219,24 +259,15 @@ async fn handle_socket(mut socket: WebSocket, dsp: Arc<Mutex<DSP>>) {
             return;
            }
 
-    // create an FFT animation object
-    // let mut fft = FFTAnimation::new(dsp.clone());
-    // let mut squares = ExpandingSquares::new(dsp.clone());
-    let mut image_display = ImageDisplay::new(dsp.clone());
-    // let mut scroll = AudioScroll::new(dsp.clone());
-    // let mut mixer = mixer::overlay::Overlay{};
-    // let mut patcher = Patcher::new();
+    println!("before creation");
 
+    let mut output = Output::new(100, 100, dsp.clone());
+    println!("after creation");
     loop {
-        let mut frame = frame::Frame::new(100, 100);
-        // let mut frame_scroll = frame::Frame::new(30, 10);
-        // squares.animate(&mut frame);
-        image_display.animate(&mut frame);
-        // fft.animate(&mut frame);
-        // scroll.animate(&mut frame);
-        // let frame = mixer.mix(0.0, &mut frame, &frame_scroll);
+        let frame3 = output.process();
+        // println!("AH");
         let mut json_frame: String = "[".to_string();
-        for pixel in frame.pixels.iter() {
+        for pixel in frame3.pixels.iter() {
             json_frame.push_str(&format!("{},", pixel));
         }
         json_frame.pop();
@@ -264,7 +295,7 @@ async fn handle_socket(mut socket: WebSocket, dsp: Arc<Mutex<DSP>>) {
 }
 
 
-async fn dsp_handle_socket(mut socket: WebSocket, world: Arc<RwLock<World>>) {
+async fn dsp_handle_socket(socket: WebSocket, world: Arc<RwLock<World>>) {
     // while let Some(msg) = socket.recv().await {
     //     let msg = if let Ok(msg) = msg {
     //         msg

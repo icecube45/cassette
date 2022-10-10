@@ -1,7 +1,7 @@
 use crate::animation_pipeline::pixel::Pixel;
 
 use super::{Frame, Animate};
-
+#[derive(Debug)]
 pub struct RainbowWheel {
     step: u8,
 }

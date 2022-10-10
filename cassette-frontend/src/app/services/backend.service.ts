@@ -42,26 +42,26 @@ export class BackendService {
         // );
     }
 
-    public getMixer(id: number): Observable<Mixer> {
+    public getMixer(outputID: number, mixerID: number): Observable<Mixer> {
         return of(MIXER);
-        return this.http.get<Mixer>(`/api/mixers/${id}`);
+        return this.http.get<Mixer>(`/api/output/${outputID}/mixers/${mixerID}`);
     }
 
-    public getEffects(id: number): Observable<EffectsWrapper> {
+    public getEffects(outputID: number, channelID: number): Observable<EffectsWrapper> {
         return of(EFFECTS);
-        return this.http.get<EffectsWrapper>(`/api/channels/${id}/effects`);
+        return this.http.get<EffectsWrapper>(`/api/output/${outputID}/channels/${channelID}/effects`);
     }
 
-    public updateChannelEffectOptions(id: number, effect: Effect): Observable<Effect> {
-        return this.http.post<Effect>(`/api/channels/${id}/effects/${effect.id}`, effect);
+    public updateChannelEffectOptions(outputID: number, channelID: number, effect: Effect): Observable<Effect> {
+        return this.http.post<Effect>(`/api/output/${outputID}/channels/${channelID}/effects/${effect.id}`, effect);
     }
 
-    public setChannelActiveEffect(id: number, effect_id: number): Observable<Effect> {
-        return this.http.post<Effect>(`/api/channels/${id}/active_effect`, effect_id);
+    public setChannelActiveEffect(outputID: number, channelID: number, effect_id: number): Observable<Effect> {
+        return this.http.post<Effect>(`/api/output/${outputID}/channels/${channelID}/active_effect`, effect_id);
     }
 
-    public updateMixer(id: number, mixer: Mixer): Observable<Mixer> {
-        return this.http.post<Mixer>(`/api/mixers/${id}`, mixer);
+    public updateMixer(outputID: number, mixerID: number, mixer: Mixer): Observable<Mixer> {
+        return this.http.post<Mixer>(`/api/output/${outputID}/mixers/${mixerID}`, mixer);
     }
 
     // public getPixels(): Observable<string> {       

@@ -1,8 +1,8 @@
 use crate::{animation_pipeline::pixel::Pixel, dsp::{DSP, ExpFilter}};
 
 use super::{Frame, Animate};
-use parking_lot::{Mutex, RwLock};
-use std::{sync::{Arc}, cmp::{max, min}};
+use parking_lot::{Mutex};
+use std::{sync::{Arc}};
 
 pub struct FFTAnimation {
     dsp: Arc<Mutex<DSP>>,
@@ -15,7 +15,7 @@ impl FFTAnimation {
         FFTAnimation {
             dsp,
             separated: false,
-            bin_filter: ExpFilter::new(0.99, 0.1, 30),
+            bin_filter: ExpFilter::new(0.99, 0.1, 100),
         }
     }
         
@@ -24,6 +24,7 @@ impl FFTAnimation {
         
         // check if frame width is more than or equal to fft bin count, including one pixel seperation if enabled
         let mut fft_bin_count = dsp.num_fft_bins;
+        println!("{}", fft_bin_count);
         let frame_width = frame.width();
         let frame_height = frame.height();
         
@@ -46,12 +47,13 @@ impl FFTAnimation {
         
         let bin_height = dsp.mel_spectrum.mapv(|x| x*frame_height as f64);
         let bin_height_filtered = self.bin_filter.update_with_array(&bin_height);
+        println!("{}", fft_bin_count);
 
         for i in 0..fft_bin_count {
 
             // dsp.mel_spectrum[i]
             let mut bin_height = bin_height_filtered[i] as i32;
-            if(bin_height == 0) {
+            if bin_height == 0 {
                 bin_height = 1;
             }
             // let green = min(64_i32 + (dsp.mel_spectrum[i] * (255.0 - 64.0)) as i32, 255_i32) as u8;

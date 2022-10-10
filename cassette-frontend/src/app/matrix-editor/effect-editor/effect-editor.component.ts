@@ -44,13 +44,13 @@ export class EffectEditorComponent implements OnInit {
         this.id = Number(this.route.snapshot.paramMap.get('id'));
         this.output_id=Number(this.route.snapshot.paramMap.get('output_id'));
         if(this.type == "mixer") {
-            this.backend.getMixer(this.id).subscribe(mixer => {
+            this.backend.getMixer(this.output_id, this.id).subscribe(mixer => {
                 this.currentMixer = mixer;
                 this.untouchedMixer = JSON.parse(JSON.stringify(mixer));
             });
         }
         else if(this.type == "channel") {
-            this.backend.getEffects(this.id).subscribe(effectsWrapper => {
+            this.backend.getEffects(this.output_id, this.id).subscribe(effectsWrapper => {
                 this.effectsWrapper = effectsWrapper
                 this.untouchedEffectsWrapper = JSON.parse(JSON.stringify(this.effectsWrapper));
                 this.currentEffect = this.effectsWrapper.effects.find(e => e.id == effectsWrapper.activeId)!;
@@ -60,18 +60,18 @@ export class EffectEditorComponent implements OnInit {
 
     public onActiveEffectChange(event: MatSelectChange) {
         this.effectsWrapper.activeId = event.value;
-        this.backend.setChannelActiveEffect(this.id, this.effectsWrapper.activeId).subscribe(() => {
+        this.backend.setChannelActiveEffect(this.output_id, this.id, this.effectsWrapper.activeId).subscribe(() => {
 
         });
     }
 
     public onEffectOptionChange() {
         if(this.type == "mixer") {
-            this.backend.updateMixer(this.id, this.currentMixer).subscribe(() => {
+            this.backend.updateMixer(this.output_id, this.id, this.currentMixer).subscribe(() => {
             });
         }
         else if(this.type == "channel") {
-            this.backend.updateChannelEffectOptions(this.id, this.currentEffect).subscribe(() => {
+            this.backend.updateChannelEffectOptions(this.output_id, this.id, this.currentEffect).subscribe(() => {
             });
         }
     }
@@ -86,7 +86,7 @@ export class EffectEditorComponent implements OnInit {
         else if(this.type == "channel") {
             this.effectsWrapper = JSON.parse(JSON.stringify(this.untouchedEffectsWrapper));
             this.currentEffect = this.effectsWrapper.effects.find(e => e.id == this.effectsWrapper.activeId)!;
-            this.backend.setChannelActiveEffect(this.id, this.effectsWrapper.activeId).subscribe(() => {
+            this.backend.setChannelActiveEffect(this.output_id, this.id, this.effectsWrapper.activeId).subscribe(() => {
                 this.onEffectOptionChange();
             });
         }

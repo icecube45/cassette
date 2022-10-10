@@ -1,15 +1,14 @@
 use crate::{animation_pipeline::pixel::Pixel, dsp::{DSP, ExpFilter}};
 
 use super::{Frame, Animate};
-use ndarray::{Axis, s, Array2, Array1};
+use ndarray::{Axis, s, Array1};
 use ndarray_ndimage::gaussian_filter1d;
-use parking_lot::{Mutex, RwLock};
-use std::{sync::{Arc}, cmp::{max, min}};
-use ndarray_stats::QuantileExt;
+use parking_lot::{Mutex};
+use std::{sync::{Arc}};
+
 
 
 // an implementation of visualize_energy from https://github.com/scottlawsonbc/audio-reactive-led-strip/blob/master/python/visualization.py#L127=
-
 
 pub struct AudioEnergy {
     dsp: Arc<Mutex<DSP>>,
@@ -24,28 +23,25 @@ pub struct AudioEnergy {
 
 impl AudioEnergy {
     pub fn new(dsp: Arc<Mutex<DSP>>) -> Self {
-        let dsp_clone = dsp.clone();
         let mut num_fft_bins = 0;
         {
-            let dsp_locked = dsp_clone.lock();
-            num_fft_bins = dsp_locked.num_fft_bins;
+            let dsp = dsp.lock();
+            num_fft_bins = dsp.num_fft_bins;
         }
         AudioEnergy {
             dsp,
             gain_filter: ExpFilter::new(0.99, 0.001, num_fft_bins),
-            p_r_filter: ExpFilter::new(0.99, 0.09, 15),
-            p_g_filter: ExpFilter::new(0.99, 0.09, 15),
-            p_b_filter: ExpFilter::new(0.99, 0.09, 15),
-            p_r: Array1::zeros(15),
-            p_g: Array1::zeros(15),
-            p_b: Array1::zeros(15),
-
+            p_r_filter: ExpFilter::new(0.99, 0.09, 50),
+            p_g_filter: ExpFilter::new(0.99, 0.09, 50),
+            p_b_filter: ExpFilter::new(0.99, 0.09, 50),
+            p_r: Array1::zeros(50),
+            p_g: Array1::zeros(50),
+            p_b: Array1::zeros(50)
         }
     }
         
     pub fn animate_energy(&mut self, frame: &mut Frame) {
-        let mut dsp = self.dsp.lock();
-        
+        let dsp = self.dsp.lock();
         let mut mel_copy = dsp.mel_spectrum.clone();
 
 
@@ -63,20 +59,20 @@ impl AudioEnergy {
         let g = second_third.mean().expect("no mean") as usize;
         let b = third_third.mean().expect("no mean") as usize;
 
-        for i in (0..self.p_r.len()) {
-            if(i < r){
+        for i in 0..self.p_r.len() {
+            if i < r {
                 self.p_r[i] = 255.0;
             }
             else{
                 self.p_r[i] = 0.0;
             }
-            if(i < g){
+            if i < g {
                 self.p_g[i] = 255.0;
             }
             else{
                 self.p_g[i] = 0.0;
             }
-            if(i < b){
+            if i < b {
                 self.p_b[i] = 255.0;
             }
             else{
@@ -101,9 +97,9 @@ impl AudioEnergy {
         for x in 0..frame.width()/2 {
             for y in 0..frame.height() {
                 let px = Pixel::from_rgb(
-                    (self.p_r[x as usize] as u8),
-                    (self.p_g[x as usize] as u8),
-                    (self.p_b[x as usize] as u8)
+                    self.p_r[x as usize] as u8,
+                    self.p_g[x as usize] as u8,
+                    self.p_b[x as usize] as u8
                 );
                 frame.set_pixel(x as u32 + frame.width() as u32/2, y as u32, px);
                 frame.set_pixel(frame.width() as u32/2 - x as u32, y as u32, px);

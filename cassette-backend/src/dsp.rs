@@ -1,5 +1,5 @@
 use std::sync::{Arc};
-use std::time::Instant;
+
 
 use axum::extract::ws::{WebSocket, Message};
 use cpal::{StreamConfig};
@@ -15,7 +15,7 @@ use rustfft::num_complex::Complex;
 use rustfft::num_traits::Zero;
 use tokio::runtime::Runtime;
 use aubio::{Onset, Tempo};
-use tokio::sync::mpsc::{self, Sender, Receiver};
+use tokio::sync::mpsc::{Sender};
 
 use crate::mel_filter;
 
@@ -43,7 +43,6 @@ impl DSPWrapper {
         DSPWrapper { dsp: ret.0, stream: ret.1 }
     }
 }
-
 pub struct DSP{
     fft_planner: RealFftPlanner::<f64>,
     buffer_size: usize,
@@ -208,7 +207,7 @@ impl DSP{
 
         // get maximum sample value
         let max_sample = data.iter().fold(0.0, |acc, &x| if x > acc { x } else { acc });
-        if(max_sample < VOLUME_THRESHOLD as f32) {
+        if max_sample < VOLUME_THRESHOLD as f32 {
             return;
         }
 
@@ -268,10 +267,12 @@ impl DSP{
 
         let beat = result != 0.0;
 
-        if(beat){
+        if beat {
             // call each tempo callback
             for channel in self.tempo_callback_channels.iter() {
-                channel.blocking_send(true);
+                if channel.capacity()!=0 {
+                    channel.blocking_send(true);
+                }
             }
         }
         // let mut beat = false;
@@ -344,7 +345,7 @@ impl DSP{
         json_string.push_str(",\"max\":");
         json_string.push_str(&format!("{}", MAX_FREQ));
 
-        if(beat) {
+        if beat {
             json_string.push_str(",\"beat\":true");
         } else {
             json_string.push_str(",\"beat\":false");
@@ -446,6 +447,7 @@ where
 
 
 // exponential smoothing filter
+#[derive(Debug)]
 pub struct ExpFilter{
     alpha_rise: f64,
     alpha_decay: f64,
@@ -463,7 +465,7 @@ impl ExpFilter{
 
     pub fn update_with_array(&mut self, new_values: &Array1<f64>) -> Array1<f64>{
         for i in 0..new_values.len(){
-            if(new_values[i] - self.value[i] > 0.0){
+            if new_values[i] - self.value[i] > 0.0 {
                 self.value[i] = self.alpha_rise * new_values[i] + (1.0 - self.alpha_rise) * self.value[i];
             }
             else{
@@ -475,7 +477,7 @@ impl ExpFilter{
 
     pub fn update_with_value(&mut self, new_value: f64) -> Array1<f64>{
         for i in 0..self.value.len(){
-            if(new_value - self.value[i] > 0.0){
+            if new_value - self.value[i] > 0.0 {
                 self.value[i] = self.alpha_rise * new_value + (1.0 - self.alpha_rise) * self.value[i];
             }
             else{

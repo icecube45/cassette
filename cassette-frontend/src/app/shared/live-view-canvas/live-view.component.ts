@@ -23,7 +23,7 @@ export class LiveViewComponent implements OnInit {
     private canvas_container!: ElementRef;
     
 
-    gutter_size: number = 1;
+    gutter_size: number = 0;
 
     pixel_size: number = 5;
 
@@ -60,6 +60,7 @@ export class LiveViewComponent implements OnInit {
         this.ws = new WebSocket('ws://'+window.location.hostname+':8080/ws');
         this.ws.onmessage = (evt: MessageEvent) => {this.onNewPixelData(evt)};
         this.ws.onopen = (): void => {
+            console.log("Connected to cassette backend, sending output id of live view")
             this.ws.send(this.output_id.toString());
         }
 
@@ -113,6 +114,7 @@ export class LiveViewComponent implements OnInit {
         // let lastRanCopy = this.lastRan
         // this.lastRan = new Date().getTime()
         // console.log(this.lastRan - lastRanCopy);
+        // console.log(evt.data);
     }
 
 

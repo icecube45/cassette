@@ -3,13 +3,12 @@ use crate::{animation_pipeline::pixel::Pixel, dsp::{DSP, ExpFilter}};
 use super::{Frame, Animate};
 use ndarray::{Axis, s, Array2};
 use ndarray_ndimage::gaussian_filter1d;
-use parking_lot::{Mutex, RwLock};
-use std::{sync::{Arc}, cmp::{max, min}};
+use parking_lot::{Mutex};
+use std::{sync::{Arc}};
 use ndarray_stats::QuantileExt;
 
 
 // an implementation of visualize_scroll from https://github.com/scottlawsonbc/audio-reactive-led-strip/blob/master/python/visualization.py#L105=
-
 
 pub struct AudioScroll {
     dsp: Arc<Mutex<DSP>>,
@@ -28,7 +27,7 @@ impl AudioScroll {
         AudioScroll {
             dsp,
             gain_filter: ExpFilter::new(0.99, 0.001, num_fft_bins),
-            p: Array2::zeros((3, 15)),
+            p: Array2::zeros((3, 50)),
         }
     }
         
@@ -74,9 +73,9 @@ impl AudioScroll {
         for x in 0..frame.width()/2 {
             for y in 0..frame.height() {
                 let px = Pixel::from_rgb(
-                    (self.p[(0, x as usize)] as u8),
-                    (self.p[(1, x as usize)] as u8),
-                    (self.p[(2, x as usize)] as u8)
+                    self.p[(0, x as usize)] as u8,
+                    self.p[(1, x as usize)] as u8,
+                    self.p[(2, x as usize)] as u8
                 );
                 frame.set_pixel(x as u32 + frame.width() as u32/2, y as u32, px);
                 frame.set_pixel(frame.width() as u32/2 - x as u32, y as u32, px);

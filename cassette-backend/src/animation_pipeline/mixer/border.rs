@@ -2,7 +2,7 @@ use crate::animation_pipeline::frame::Frame;
 use crate::animation_pipeline::pixel::Pixel;
 use super::Mix;
 
-pub(crate) struct Border;
+pub struct Border;
 
 impl Mix for Border {
     fn mix(&mut self, weight:f32, channel_a: &Frame, channel_b: &Frame) -> Frame {

@@ -5,7 +5,12 @@ pub mod audio_scroll;
 pub mod audio_energy;
 pub mod image_display;
 
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc};
+use parking_lot::{Mutex};
+
+
+
+use crate::dsp::DSP;
 
 use self::rainbow_wheel::RainbowWheel;
 use self::expanding_squares::ExpandingSquares;
@@ -16,28 +21,29 @@ use self::image_display::ImageDisplay;
 
 use super::frame::Frame;
 
-// #[enum_dispatch]
+#[enum_dispatch]
 
 pub trait Animate {
     fn animate(&mut self, frame: &mut Frame);
 }
 
 pub struct EffectComponent {
-    name: String,
+    // name: String,
     effect: Effect,
     current_frame: Arc<Mutex<Frame>>,
 }
 
 impl EffectComponent {
-    pub fn new(name: String, effect: Effect) -> EffectComponent {
+    pub fn new(/*name: String,*/ effect: Effect) -> EffectComponent {
         EffectComponent {
-            name,
+            // name,
             effect,
             current_frame: Arc::new(Mutex::new(Frame::new(32,32))),
         }
     }
     // is this right? no idea! but it allows for the effect to decide how it wants to animate
-    pub fn animate(&mut self) {
+    pub fn animate(&mut self, frame: &mut Frame) {
+        self.effect.animate(frame)
         // self.effect.animate(&mut self.current_frame.lock().unwrap());
     }
 }
@@ -54,11 +60,14 @@ pub enum Effect {
 }
 
 impl Effect {
-    pub fn new() -> Vec<Effect> {
+    pub fn new_effects_set(dsp: Arc<Mutex<DSP>>) -> Vec<Effect> {
         vec![
-            // Effect::ExpandingSquares(ExpandingSquares::new()),
+            Effect::ExpandingSquares(ExpandingSquares::new(dsp.clone())),
             Effect::RainbowWheel(RainbowWheel::new()),
-            // Effect::FFTAnimation(FFTAnimation::new(Arc::new(Mutex::new(DSP::new())))),
+            // Effect::ImageDisplay(ImageDisplay::new(dsp.clone())),
+            Effect::AudioEnergy(AudioEnergy::new(dsp.clone())),
+            Effect::AudioScroll(AudioScroll::new(dsp.clone())),
+            Effect::FFTAnimation(FFTAnimation::new(dsp.clone())),
         ]
     }
 }

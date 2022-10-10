@@ -4,10 +4,9 @@ use parking_lot::Mutex;
 use rand::Rng;
 use tokio::sync::mpsc::{self, Sender, Receiver};
 
-use crate::{animation_pipeline::pixel::Pixel, dsp::{DSP, TempoCallback}};
+use crate::{animation_pipeline::pixel::Pixel, dsp::{DSP}};
 
 use super::{Frame, Animate};
-
 pub struct ExpandingSquares {
     eo_count: u32,
     eo_size: u32,
@@ -31,14 +30,14 @@ impl ExpandingSquares {
     pub fn new(dsp: Arc<Mutex<DSP>>) -> Self {
         let (tx, rx): (Sender<bool>, Receiver<bool>) = mpsc::channel(10);
         let mut squares = ExpandingSquares{
-            eo_count: 5,
-            eo_size: 3,
-            eo_growth: 10,
-            eo_objects_pos_x: vec![0; 5],
-            eo_objects_pos_y: vec![0; 5],
-            eo_objects_expand: vec![0; 5],
-            eo_objects_fade: vec![0; 5],
-            eo_objects_col: vec![Pixel::from_rgb(0, 0, 0); 5],
+            eo_count: 15,
+            eo_size: 6,
+            eo_growth: 20,
+            eo_objects_pos_x: vec![0; 15],
+            eo_objects_pos_y: vec![0; 15],
+            eo_objects_expand: vec![0; 15],
+            eo_objects_fade: vec![0; 15],
+            eo_objects_col: vec![Pixel::from_rgb(0, 0, 0); 15],
             tempo_event: false,
             sync_to_tempo: true,
             dsp,
@@ -56,7 +55,7 @@ impl ExpandingSquares {
             squares.eo_objects_fade[i] = 0;
             squares.eo_objects_col[i] = squares.color;
         }
-        if(squares.sync_to_tempo) {
+        if squares.sync_to_tempo {
             let mut dsp = squares.dsp.lock();
             // create arc mutex of squares
             // create tempo callback
@@ -64,7 +63,9 @@ impl ExpandingSquares {
         }
     squares
     }
-
+    pub fn set_color(&mut self, color: Pixel){
+        self.color = color;
+    }
 }
 
 
@@ -78,8 +79,8 @@ impl Animate for ExpandingSquares {
 impl ExpandingSquares{
     pub fn animate_expanding_squares(&mut self, frame: &mut Frame){
         // receive all tempo_channel_rx events
-        if(self.sync_to_tempo) {
-            while(self.tempo_channel_rx.try_recv().is_ok()) {
+        if self.sync_to_tempo {
+            while self.tempo_channel_rx.try_recv().is_ok() {
                 self.tempo_event = true;
             }
         }
@@ -87,7 +88,7 @@ impl ExpandingSquares{
         // check if current time minus last_ran_at is greater than delay
         // get current unix time
         let now = std::time::SystemTime::now();
-        if(now.duration_since(self.last_ran_at).unwrap().as_millis() < self.delay){
+        if now.duration_since(self.last_ran_at).unwrap().as_millis() < self.delay {
             frame.copy_from(&self.last_frame);
             return;
         }
@@ -112,7 +113,7 @@ impl ExpandingSquares{
             if self.eo_objects_fade[j] >= self.eo_growth {
                 self.eo_objects_fade[j] = self.eo_growth;
             }
-            if(!self.sync_to_tempo){
+            if !self.sync_to_tempo {
                     // get random int in range
                     let mut rng = rand::thread_rng();
                     if self.eo_objects_expand[j] >= self.eo_growth && rng.gen_range(0..100 as u8) < 10 {
@@ -127,7 +128,7 @@ impl ExpandingSquares{
             let height = frame.height();
             let width  = frame.width();
             for j in 0..self.eo_count as usize{
-                if(self.eo_objects_expand[j] >= self.eo_growth){
+                if self.eo_objects_expand[j] >= self.eo_growth {
                     self.eo_objects_expand[j] = 0;
                     self.eo_objects_fade[j] = 0;
                     let mut rng = rand::thread_rng();

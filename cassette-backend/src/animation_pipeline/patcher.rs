@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use ndarray::Array1;
 
+
 use super::pixel::Pixel;
 use super::frame::Frame;
 
@@ -36,7 +37,7 @@ use super::frame::Frame;
 // projecting an image onto the bike as a whole (an extension of the "duel monitor" setup).
 
 // TODO: Actually make devices. I just need this here so I can template stuff out for now.
-#[derive(Eq, Hash, PartialEq)]
+#[derive(Eq, Hash, PartialEq, Debug)]
 struct Device{
 
 }

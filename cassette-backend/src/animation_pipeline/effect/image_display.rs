@@ -1,20 +1,19 @@
 use std::io::Read;
-use std::{sync::Arc, time::SystemTime};
+use std::{sync::Arc};
 
 use image::AnimationDecoder;
 use image::DynamicImage;
-use image::Frames;
+
 use parking_lot::Mutex;
-use rand::Rng;
+
 use tokio::sync::mpsc::{self, Sender, Receiver};
-use image::io::Reader as ImageReader;
+
 use image::GenericImageView;
 use image::Pixel;
 use image::codecs::gif::GifDecoder;
-use crate::{dsp::{DSP, TempoCallback}};
+use crate::{dsp::{DSP}};
 
 use super::{Frame, Animate};
-
 pub struct ImageDisplay {
     tempo_event: bool,
     new_image: bool,
@@ -35,7 +34,7 @@ impl ImageDisplay {
         let mut image = DynamicImage::new_rgb8(0, 0);
         // create empty frames
         let mut frames = Vec::<DynamicImage>::new();
-        if(is_gif){
+        if is_gif {
             let file_in = std::fs::File::open("doge.gif").unwrap();
             let decoder = GifDecoder::new(file_in).unwrap();
             let frames_native = decoder.into_frames();
@@ -80,7 +79,7 @@ impl ImageDisplay {
             is_gif,
             frame_index: 0,
             };
-        if(imgDisplay.sync_to_tempo) {
+        if imgDisplay.sync_to_tempo {
             let mut dsp = imgDisplay.dsp.lock();
             // create arc mutex of squares
             // create tempo callback
@@ -102,16 +101,16 @@ impl Animate for ImageDisplay {
 impl ImageDisplay{
     pub fn display_image(&mut self, frame: &mut Frame){
         // receive all tempo_channel_rx events
-        if(self.sync_to_tempo) {
-            while(self.tempo_channel_rx.try_recv().is_ok()) {
+        if self.sync_to_tempo {
+            while self.tempo_channel_rx.try_recv().is_ok() {
                 // receive
                 self.tempo_event = true;
             }
         }
-        if(self.new_image || self.tempo_event) {
-            if(self.tempo_event) {
+        if self.new_image || self.tempo_event {
+            if self.tempo_event {
                 self.frame_index = self.frame_index + 1;
-                if(self.frame_index >= self.frames.len()) {
+                if self.frame_index >= self.frames.len() {
                     self.frame_index = 0;
                 }
                 self.image = self.frames[self.frame_index].clone();

@@ -2,7 +2,8 @@ use ndarray::Array2;
 
 use super::pixel::Pixel;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
+
 pub struct Frame {
     pub pixels: Array2<Pixel>,
     timestamp: u128
