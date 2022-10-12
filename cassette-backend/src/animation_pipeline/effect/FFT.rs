@@ -24,7 +24,7 @@ impl FFTAnimation {
         
         // check if frame width is more than or equal to fft bin count, including one pixel seperation if enabled
         let mut fft_bin_count = dsp.num_fft_bins;
-        println!("{}", fft_bin_count);
+        // println!("{}", fft_bin_count);
         let frame_width = frame.width();
         let frame_height = frame.height();
         
@@ -47,7 +47,7 @@ impl FFTAnimation {
         
         let bin_height = dsp.mel_spectrum.mapv(|x| x*frame_height as f64);
         let bin_height_filtered = self.bin_filter.update_with_array(&bin_height);
-        println!("{}", fft_bin_count);
+        // println!("{}", fft_bin_count);
 
         for i in 0..fft_bin_count {
 

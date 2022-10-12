@@ -81,7 +81,9 @@ async fn main() {
         .route(
             "/ws",
             get({
-                move |ws, user_agent| ws_handler(ws, user_agent, dsp_wrapper.dsp.clone())
+                let world = world.clone();
+                let dsp_clone = dsp_wrapper.dsp.clone();
+                move |ws, user_agent| ws_handler(ws, user_agent, world, dsp_clone)
             }),
         )
         .route("/mod_entity",
@@ -90,23 +92,30 @@ async fn main() {
                 move |body| { mod_entity(world, body) }
             }));
             
-    tokio::spawn(async move {
-        let one_sec = time::Duration::from_millis(1000);
+    // tokio::spawn(async move {
+    //     let one_sec = time::Duration::from_millis(1000);
 
-        // loop {
-        //     thread::sleep(one_sec);
-        //     let world = world.read();
-        //     // println!("{:?}", world.len());
-        //     //https://docs.rs/hecs/latest/hecs/struct.QueryBorrow.html#method.with
-        //     // how to query for type in the system...
-        //     for (id, pixel) in world.query::<&Pixel>()
-        //         .with::<Output>()    
-        //         .iter() {
-        //             // println!("{:?}", id);
-        //             // println!("{:?}", pixel);
-        //             }
-        // }
-    });
+    //     // loop {
+    //     //     thread::sleep(one_sec);
+    //     //     let world = world.read();
+    //     //     // println!("{:?}", world.len());
+    //     //     //https://docs.rs/hecs/latest/hecs/struct.QueryBorrow.html#method.with
+    //     //     // how to query for type in the system...
+    //     //     for (id, pixel) in world.query::<&Pixel>()
+    //     //         .with::<Output>()    
+    //     //         .iter() {
+    //     //             // println!("{:?}", id);
+    //     //             // println!("{:?}", pixel);
+    //     //             }
+    //     // }
+    // });
+
+    println!("Creating one output");
+    let dsp_clone = dsp_wrapper.dsp.clone();
+    let output_entity = spawn_output(world.clone(), dsp_clone);
+    println!("Created output: {}", output_entity.id());
+    let clone_world = world.clone();
+    tokio::task::spawn_blocking(move || processing_thread(clone_world));
 
 
 
@@ -118,6 +127,24 @@ async fn main() {
         .await
         .unwrap();
 }
+
+
+fn processing_thread(world: Arc<RwLock<World>>){
+    loop {
+        {
+            let world = world.read();
+            let mut query = world.query::<&mut Output>();
+            query.iter().for_each(|(entity, output)| {
+                if output.enabled() {
+                    output.process();
+                }
+            });
+        }
+        thread::sleep(std::time::Duration::from_millis(10))
+    }
+}
+
+
 
 async fn mixer_get(Path(params): Path<HashMap<String, String>>) {
     let output_id = params.get("output_id");
@@ -136,23 +163,25 @@ async fn spawn_entity(world: Arc<RwLock<World>>, extract::Json(payload): extract
 }
 
 
-async fn spawn_output(world: Arc<RwLock<World>>, extract::Json(payload): extract::Json<Pixel>, dsp: Arc<Mutex<DSP>>) -> Json<Entity> {
-    let mut world = world.write();
+fn spawn_output(world: Arc<RwLock<World>>, dsp: Arc<Mutex<DSP>>) -> Entity {
     let mut builder = EntityBuilder::new();
-    builder.add(Output::new(100, 100, dsp.clone()));
+    let new_dsp = dsp.clone();
+    builder.add(Output::new(100, 100, new_dsp));
+    let mut world = world.write();
     let entity = world.spawn(builder.build());
 
-    println!("Spawned entity: {}", entity.id());
-    Json(entity)
+    println!("Spawned output: {}", entity.id());
+    // Json(entity)
+    entity
 }
 
-// async fn get_output(world: Arc<RwLock<World>>, extract::Json(entity): extract::Json<Entity>) -> Result<Output, StatusCode> {
-//     let world = world.read()
-//     let output = world.get::<Output>(entity);
+// async fn get_output(world: Arc<RwLock<World>>, extract::Json(entity): extract::Json<Entity>) -> Result<hecs::RefMut<'_, output::Output, >, StatusCode> {
+//     let world = world.read();
+//     let output = world.get_mut::<Output>(entity);
 //     match output {
-//         Ok(pixel) => return Ok(output),
+//         Ok(pixel) => return Ok(output.unwrap()),
 //         Err(err) => {
-//             println!("Error getting pixel: {:?}", err);
+//             println!("Error getting output: {:?}", err);
 //             return Err(StatusCode::NOT_FOUND)
 //         }
 //     }
@@ -206,21 +235,23 @@ async fn dsp_ws_handler(
 async fn ws_handler(
     ws: WebSocketUpgrade, 
     user_agent: Option<TypedHeader<headers::UserAgent>>, 
+    world: Arc<RwLock<World>>,
     dsp: Arc<Mutex<DSP>>,
 ) -> impl IntoResponse {
     if let Some(TypedHeader(user_agent)) = user_agent {
         println!("Websocket Client connected: `{}`", user_agent.as_str());
     }
     ws.on_upgrade({
-        |ws| handle_socket(ws, dsp)
+        let world = world.clone();
+        |ws| handle_socket(ws, world, dsp)
     })
     
 }
 
 
 
-async fn handle_socket(mut socket: WebSocket, dsp: Arc<Mutex<DSP>>) {
-    
+async fn handle_socket(mut socket: WebSocket, world: Arc<RwLock<World>>, dsp: Arc<Mutex<DSP>>) {
+    let mut entity_id = 0; 
     if let Ok(msg) = timeout(Duration::from_secs(5), socket.recv()).await { // timeout after 5 seconds
         if let Some(msg) = msg {                                   // if we received a message of Some type
             match msg {                                           // perform pattern matching on the message
@@ -229,8 +260,9 @@ async fn handle_socket(mut socket: WebSocket, dsp: Arc<Mutex<DSP>>) {
                         Message::Text(t) => {
                             if t.len() > 1 {
                                 println!("Client is too chatty :(");
+                                return;
                             }
-                            println!("Client is live view of output {:?}", t);
+                            entity_id = t.parse::<usize>().unwrap();
                         }
                         Message::Binary(_) => {
                             println!("Client sent binary data - we weren't expecting this");
@@ -259,39 +291,67 @@ async fn handle_socket(mut socket: WebSocket, dsp: Arc<Mutex<DSP>>) {
             return;
            }
 
-    println!("before creation");
 
-    let mut output = Output::new(100, 100, dsp.clone());
-    println!("after creation");
-    loop {
-        let frame3 = output.process();
-        // println!("AH");
-        let mut json_frame: String = "[".to_string();
-        for pixel in frame3.pixels.iter() {
-            json_frame.push_str(&format!("{},", pixel));
+    println!("Got new frontend live view socket requesting view of output {}", entity_id);
+    let socket = Arc::new(Mutex::new(socket));
+
+    {
+        let world_read = world.read();
+        unsafe{
+            let entity = world_read.find_entity_from_id(entity_id as u32);
+            let entity_return = world_read.get_mut::<Output>(entity);
+            match entity_return {
+                Ok(mut output) => {
+                    output.add_websocket(socket);
+                    output.enable();
+                },
+                Err(err) => {
+                    println!("Error getting output: {:?}", err);
+                    return;
+                }
+            }
         }
-        json_frame.pop();
-        json_frame.push(']');
-        socket.send(Message::Text(json_frame)).await.unwrap();
-        tokio::time::sleep(Duration::from_millis(15)).await;
-        // let mut it = pixels.iter().peekable();
-        // while let Some(pixel) = it.next() {
-        //     // serialize it and build json array
-        //     let json = serde_json::to_string(&pixel).unwrap();
-        //     // add it to frame
-        //     frame.push_str(&json);
-        //     // add comma if not last element
-        //     if it.peek().is_some() {
-        //         frame.push_str(",");
-        //     }
-        // }
-        // frame.push_str("]");
-        // if socket.send(Message::Text(frame)).await.is_err() {
-        //     println!("Client disconnected :(");
-        //     return;
-        // }
-        // tokio::time::sleep(std::time::Duration::from_millis(30)).await;
     }
+
+
+
+
+
+
+    // loop {
+    //     let frame3 = {
+    //         let world_read = world.read();
+    //         let x = world_read.get_mut::<Output>(output_entity).unwrap().process();
+    //         x
+    //     };
+    //     // let frame3 = output.process();
+    //     // println!("AH");
+    //     let mut json_frame: String = "[".to_string();
+    //     for pixel in frame3.pixels.iter() {
+    //         json_frame.push_str(&format!("{},", pixel));
+    //     }
+    //     json_frame.pop();
+    //     json_frame.push(']');
+    //     socket.send(Message::Text(json_frame)).await.unwrap();
+    //     // tokio::time::sleep(Duration::from_millis(15)).await;
+    //     // let mut it = pixels.iter().peekable();
+    //     // while let Some(pixel) = it.next() {
+    //     //     // serialize it and build json array
+    //     //     let json = serde_json::to_string(&pixel).unwrap();
+    //     //     // add it to frame
+    //     //     frame.push_str(&json);
+    //     //     // add comma if not last element
+    //     //     if it.peek().is_some() {
+    //     //         frame.push_str(",");
+    //     //     }
+    //     // }
+    //     // frame.push_str("]");
+    //     // if socket.send(Message::Text(frame)).await.is_err() {
+    //     //     println!("Client disconnected :(");
+    //     //     return;
+    //     // }
+    //     // tokio::time::sleep(std::time::Duration::from_millis(30)).await;
+    // }
 }
 
 

@@ -1,7 +1,9 @@
 use std::sync::{Arc};
+use axum::extract::ws::{WebSocket, Message};
 use parking_lot::Mutex;
 
 use serde::{Serialize};
+use tokio::{runtime::{Runtime, Handle}};
 
 use crate::dsp::DSP;
 
@@ -15,6 +17,7 @@ pub struct EntityResponse {
 pub struct Output {
     pub(crate) name: String,
     patcher: Patcher,
+    enabled: bool,
     width: u32,
     height: u32,
     dsp: Arc<Mutex<DSP>>,
@@ -28,7 +31,8 @@ pub struct Output {
     channelDCurrentEffectIndex: usize,
     mixer1: MixerComponent,
     mixer2: MixerComponent,
-    masterMixer: MixerComponent
+    masterMixer: MixerComponent,
+    display_websockets: Vec<Arc<Mutex<WebSocket>>>,
 
 }
 
@@ -38,6 +42,7 @@ impl Output {
         let mut out = Output {
             name: "unnamed".to_string(),
             patcher: Patcher::new(),
+            enabled: false,
             width: width,
             height: height,
             dsp: dsp.clone(),
@@ -46,15 +51,32 @@ impl Output {
             channelCEffects: Effect::new_effects_set(dsp.clone()),
             channelDEffects: Effect::new_effects_set(dsp.clone()),
             channelACurrentEffectIndex: 0,
-            channelBCurrentEffectIndex: 2,
+            channelBCurrentEffectIndex: 3,
             channelCCurrentEffectIndex: 0,
-            channelDCurrentEffectIndex: 4,
+            channelDCurrentEffectIndex: 0,
             mixer1: MixerComponent::new(),
             mixer2: MixerComponent::new(),
-            masterMixer: MixerComponent::new()
+            masterMixer: MixerComponent::new(),
+            display_websockets: Vec::new()
 
         };
         out
+    }
+
+    pub fn add_websocket(&mut self, socket: Arc<Mutex<WebSocket>>) {
+        self.display_websockets.push(socket);
+    }
+
+    pub fn enable(&mut self) {
+        self.enabled = true;
+    }
+
+    pub fn disable(&mut self) {
+        self.enabled = false;
+    }
+
+    pub fn enabled(&mut self) -> bool {
+        return self.enabled;
     }
 
     pub fn process(&mut self) -> Frame{
@@ -77,6 +99,40 @@ impl Output {
 
         let resultant_frame = self.masterMixer.mix(&sub_frame_1, &sub_frame_2);
 
+        
+        
+        if self.display_websockets.len() != 0 {
+            let mut json_frame: String = "[".to_string();
+            for pixel in resultant_frame.pixels.iter() {
+                json_frame.push_str(&format!("{},", pixel));
+            }
+            json_frame.pop();
+            json_frame.push(']');
+            
+
+
+            self.display_websockets.retain(|socket| {
+                let handle = Handle::current();
+                handle.enter();
+                return futures::executor::block_on(async {
+                    if socket.lock()
+                        .send(Message::Text(String::from(json_frame.clone())))
+                        // .send(Message::Text("hello".to_string()))
+                        .await
+                        .is_err() 
+                    {
+                        println!("Failed to send frame to display");
+                        return false;
+                    }
+                    else {
+                        return true;
+                    }
+                });
+            });
+
+
+        }
+            
         // Output to device(s)
         // TODO
         // for now just returning frame

@@ -61,6 +61,7 @@ pub struct DSP{
     pub mel_spectrum: Array1<f64>,
     pub num_fft_bins: usize,
     onset: Arc<Mutex<Onset>>,
+    tempo: Arc<Mutex<Tempo>>,
     tempo_callback_channels: Vec<Sender<bool>>,
 }
 
@@ -104,10 +105,14 @@ impl DSP{
         
 
         
-        let onset = Onset::new(aubio::OnsetMode::SpecDiff, 2048, 800, default_config.sample_rate.0 as u32).expect("Failed to create onset");
+        let mut onset = Onset::new(aubio::OnsetMode::SpecDiff, 2048, 800, default_config.sample_rate.0 as u32).expect("Failed to create onset");
+        onset.set_awhitening(false);
+        onset.set_threshold(0.1);
+        onset.set_minioi_ms(0.1);
         let tempo = Tempo::new(aubio::OnsetMode::Mkl, 2048, 800, default_config.sample_rate.0 as u32).expect("Failed to create tempo");
         // create ARCs from the above
         let onset_arc = Arc::new(Mutex::new(onset));
+        let tempo_arc = Arc::new(Mutex::new(tempo));
 
 
         let dsp = DSP{
@@ -129,6 +134,7 @@ impl DSP{
             mel_spectrum: Array::zeros([num_fft_bins]),
             num_fft_bins: num_fft_bins,
             onset: onset_arc.clone(),
+            tempo: tempo_arc.clone(),
             tempo_callback_channels: vec![],
            
         };
@@ -204,6 +210,7 @@ impl DSP{
 
         // lock onset and tempo
         let mut onset = self.onset.lock();
+        let mut tempo = self.tempo.lock();
 
         // get maximum sample value
         let max_sample = data.iter().fold(0.0, |acc, &x| if x > acc { x } else { acc });
@@ -259,13 +266,14 @@ impl DSP{
         // create onset vector
         let mut onset_vec = vec![0.0; aubio_data.len()];
         let result = onset.do_result(&aubio_data_f32).expect("Failed to do onset detection");
-        // let tempo_result = tempo.do_result(&aubio_data_f32).expect("Failed to do tempo detection") as u32;
+        let tempo_result = tempo.do_result(&aubio_data_f32).expect("Failed to do tempo detection");
+
         // println!("{}", onset_vec[0]);
         // println!("{}", onset.get_threshold());
         // onset.set_threshold(0.3);
         // println!("{:?}", result);
 
-        let beat = result != 0.0;
+        let beat = result > 1.0;
 
         if beat {
             // call each tempo callback

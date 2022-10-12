@@ -1,10 +1,10 @@
 use std::sync::Arc;
 
-use axum::{extract, Json};
-use hecs::{World, Entity, EntityBuilder, Component};
+use axum::{Json};
+use hecs::{World, Entity};
 use tokio::sync::RwLock;
 
-use crate::animation_pipeline::{effect::{Effect, expanding_squares::ExpandingSquares, rainbow_wheel::RainbowWheel}, output::Output};
+use crate::animation_pipeline::{effect::{Effect, rainbow_wheel::RainbowWheel}};
 struct EntityResponse {
     id: u64
 }

@@ -64,7 +64,7 @@ impl Effect {
         vec![
             Effect::ExpandingSquares(ExpandingSquares::new(dsp.clone())),
             Effect::RainbowWheel(RainbowWheel::new()),
-            // Effect::ImageDisplay(ImageDisplay::new(dsp.clone())),
+            Effect::ImageDisplay(ImageDisplay::new(dsp.clone())),
             Effect::AudioEnergy(AudioEnergy::new(dsp.clone())),
             Effect::AudioScroll(AudioScroll::new(dsp.clone())),
             Effect::FFTAnimation(FFTAnimation::new(dsp.clone())),

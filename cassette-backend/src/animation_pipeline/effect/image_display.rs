@@ -117,7 +117,7 @@ impl ImageDisplay{
         }
 
 
-            println!("new image");
+            // println!("new image");
             let img = &self.image;
             let img_width = img.width() as u32;
             let img_height = img.height() as u32;
@@ -138,7 +138,7 @@ impl ImageDisplay{
             // let img_resized_pixels = img_resized.pixels();
             let img_resized_width = img_resized.width() as u32;
             let img_resized_height = img_resized.height() as u32;
-            println!("{}x{} resized to {}x{}", img_width, img_height, img_resized_width, img_resized_height);
+            // println!("{}x{} resized to {}x{}", img_width, img_height, img_resized_width, img_resized_height);
 
             // draw image to frame
             for x in 0..img_resized_width {
