@@ -5,8 +5,8 @@
             <mat-card-title-group>
                 <mat-card-title>{{output.name}}</mat-card-title>
                 <mat-card-subtitle>ID: {{output.id}}</mat-card-subtitle>
-                <mat-icon *ngIf="output.type === 'matrix'">grain</mat-icon>
-                <mat-icon *ngIf="output.type === 'strip'">linear_scale</mat-icon>
+                <mat-icon *ngIf="output.output_type === 'matrix'">grain</mat-icon>
+                <mat-icon *ngIf="output.output_type === 'strip'">linear_scale</mat-icon>
             </mat-card-title-group>
             <mat-card-actions>
                 <button mat-button (click)="onConfigure(output)">CONFIGURE</button>

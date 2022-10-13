@@ -23,16 +23,16 @@
             <div *ngFor="let effectOption of currentEffect.options">
                 <div class="option-container">
                     <label *ngIf="effectOption.name.toLowerCase().indexOf('image') === -1">{{effectOption.name}}</label>
-                    <label *ngIf="effectOption.type === EffectOptionType.Analog">{{$any(effectOption).value}}</label>
+                    <label *ngIf="effectOption.option_type === EffectOptionType.Analog">{{$any(effectOption).value}}</label>
                     <mat-form-field appearance="fill"
-                        *ngIf="effectOption.type === EffectOptionType.Select && effectOption.name.toLowerCase().indexOf('image') === -1">
+                        *ngIf="effectOption.option_type === EffectOptionType.Select && effectOption.name.toLowerCase().indexOf('image') === -1">
                         <mat-select [(value)]="$any(effectOption).value" (selectionChange)="onEffectOptionChange()">
                             <mat-option *ngFor="let option of $any(effectOption).options" [value]="option">{{option}}</mat-option>
                         </mat-select>
                         
                     </mat-form-field>
                     <!-- If the name does contain "image", then we want to create a row of images to choose from, instead of using usual selector -->
-                    <div class="image-selector" *ngIf="effectOption.type === EffectOptionType.Select && effectOption.name.toLowerCase().indexOf('image') !== -1">
+                    <div class="image-selector" *ngIf="effectOption.option_type === EffectOptionType.Select && effectOption.name.toLowerCase().indexOf('image') !== -1">
                         <!-- <mat-grid-list cols={{$any(effectOption).options.length}} rowHeight="1:1">
                             <mat-grid-tile *ngFor="let image of $any(effectOption).options" (click)="onEffectOptionChange()">
                                 <img class="tile-image" [src]="image"  >
@@ -42,10 +42,10 @@
                             <img class="tile-image" [src]="image"  >
                         </div>
                     </div>
-                    <button mat-button class="color_swatch" *ngIf="effectOption.type === EffectOptionType.Color" (click)="openColorPicker($any(effectOption))" [style.background]="$any(effectOption).value"></button>
+                    <button mat-button class="color_swatch" *ngIf="effectOption.option_type === EffectOptionType.Color" (click)="openColorPicker($any(effectOption))" [style.background]="$any(effectOption).value"></button>
                     <mat-checkbox
                     [(ngModel)]="$any(effectOption).value"
-                    *ngIf="effectOption.type === EffectOptionType.Boolean"
+                    *ngIf="effectOption.option_type === EffectOptionType.Boolean"
                     (change)="onEffectOptionChange()"
                     >
                     </mat-checkbox>
@@ -58,7 +58,7 @@
                     [max]="$any(effectOption).max"
                     [step]="$any(effectOption).step"
                     [(value)]="$any(effectOption).value"
-                    *ngIf="effectOption.type === EffectOptionType.Analog"
+                    *ngIf="effectOption.option_type === EffectOptionType.Analog"
                     (change)="onEffectOptionChange()"
                 >
                 </mat-slider>
@@ -70,13 +70,13 @@
         <div *ngFor="let effectOption of currentMixer.options">
             <div class="option-container">
                 <mat-form-field appearance="fill"
-                    *ngIf="effectOption.type === EffectOptionType.Select">
+                    *ngIf="effectOption.option_type === EffectOptionType.Select">
                     <mat-label>Mix Type</mat-label>
                     <mat-select [(value)]="$any(effectOption).value" (selectionChange)="onEffectOptionChange()">
                         <mat-option *ngFor="let option of $any(effectOption).options" [value]="option">{{option}}</mat-option>
                     </mat-select>
                 </mat-form-field>
-                <label *ngIf="effectOption.type === EffectOptionType.Analog">{{$any(effectOption).value}}</label>
+                <label *ngIf="effectOption.option_type === EffectOptionType.Analog">{{$any(effectOption).value}}</label>
             </div>
             <mat-slider
                 thumbLabel
@@ -85,7 +85,7 @@
                 [max]="$any(effectOption).max"
                 [step]="$any(effectOption).step"
                 [(value)]="$any(effectOption).value"
-                *ngIf="effectOption.type === EffectOptionType.Analog"
+                *ngIf="effectOption.option_type === EffectOptionType.Analog"
                 (change)="onEffectOptionChange()"
             >
             ></mat-slider>

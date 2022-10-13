@@ -10,18 +10,20 @@ mod api;
 #[macro_use]
 extern crate enum_dispatch;
 
+use animation_pipeline::{output, mixer};
 use axum::{
     extract::{
         ws::{Message, WebSocket, WebSocketUpgrade},
         TypedHeader, self, Path
     },
-    http::StatusCode,
+    http::{StatusCode, Method},
     response::IntoResponse,
     routing::{get, put},
     Router,
     Json
     
 };
+use tower_http::cors::{CorsLayer, any, Any};
 use dsp::DSP;
 use hecs::{World, Entity, EntityBuilder};
 use parking_lot::{Mutex, RwLock};
@@ -56,7 +58,18 @@ async fn main() {
     let dsp_wrapper = dsp::DSPWrapper::new(world.clone());
 
 
+
+    let cors_layer = CorsLayer::new()
+        // allow `GET` and `POST` when accessing the resource
+        .allow_methods(vec![Method::GET, Method::POST])
+        // allow requests from any origin
+        .allow_origin(Any);
+
     let api_routing = Router::new()
+        .route("/outputs", get({
+            let world = world.clone(); 
+            move || { api_get_outputs(world) }
+        }))
         .route("/output/:output_id/mixers/:mixer_id",
             get({
                 let world = world.clone(); 
@@ -90,7 +103,8 @@ async fn main() {
             put({
                 let world = world.clone();
                 move |body| { mod_entity(world, body) }
-            }));
+            }))
+        .layer(cors_layer);
             
     // tokio::spawn(async move {
     //     let one_sec = time::Duration::from_millis(1000);
@@ -112,7 +126,11 @@ async fn main() {
 
     println!("Creating one output");
     let dsp_clone = dsp_wrapper.dsp.clone();
-    let output_entity = spawn_output(world.clone(), dsp_clone);
+    let output_entity = spawn_output(world.clone(), dsp_clone, 3);
+    println!("Created output: {}", output_entity.id());
+    println!("Creating one output");
+    let dsp_clone = dsp_wrapper.dsp.clone();
+    let output_entity = spawn_output(world.clone(), dsp_clone, 4);
     println!("Created output: {}", output_entity.id());
     let clone_world = world.clone();
     tokio::task::spawn_blocking(move || processing_thread(clone_world));
@@ -133,10 +151,13 @@ fn processing_thread(world: Arc<RwLock<World>>){
     loop {
         {
             let world = world.read();
-            let mut query = world.query::<&mut Output>();
+            let mut query = world.query::<&Arc<Mutex<Output>>>();
             query.iter().for_each(|(entity, output)| {
-                if output.enabled() {
-                    output.process();
+                {
+                    let mut output = output.lock();
+                    if output.enabled() {
+                        output.process();
+                    }
                 }
             });
         }
@@ -144,6 +165,46 @@ fn processing_thread(world: Arc<RwLock<World>>){
     }
 }
 
+async fn api_get_outputs(world: Arc<RwLock<World>>) -> Json<Vec<output::ApiRepresentation>>{
+    let world = world.read();
+    let mut query = world.query::<&Arc<Mutex<Output>>>();
+    let mut response: Vec<output::ApiRepresentation> = Vec::new();
+    query.iter().for_each(|(entity, output)| {
+        let mut entity_resp = 
+        {
+            let mut output = output.lock();
+            output.get_api_representation()
+        };
+        entity_resp.id = entity.to_bits().get();
+        response.push(entity_resp);
+    });
+    Json(response)
+}
+
+async fn api_get_mixer(world: Arc<RwLock<World>>, output_id: u64, mixer_id: usize) -> Json<mixer::ApiRepresentation> {
+    let world = world.read();
+    let mut query = world.query::<&Arc<Mutex<Output>>>();
+    let entity = Entity::from_bits(output_id).unwrap();
+    {
+        let output = world.get::<Arc<Mutex<Output>>>(entity).unwrap();
+
+        let mut entity_resp = 
+            {
+                let mut output = output.lock();
+                let api_rep = {
+                    match mixer_id {
+                            1 => output.mixer1.get_api_representation(),
+                            2 => output.mixer2.get_api_representation(),
+                            3 => output.masterMixer.get_api_representation(),
+                            _ => output.masterMixer.get_api_representation(),
+                    }
+                };
+                return Json(api_rep);
+                // return Json(output.get_mixer_by_id(mixer_id).get_api_representation());
+            };
+            
+    };
+}
 
 
 async fn mixer_get(Path(params): Path<HashMap<String, String>>) {
@@ -163,15 +224,14 @@ async fn spawn_entity(world: Arc<RwLock<World>>, extract::Json(payload): extract
 }
 
 
-fn spawn_output(world: Arc<RwLock<World>>, dsp: Arc<Mutex<DSP>>) -> Entity {
+fn spawn_output(world: Arc<RwLock<World>>, dsp: Arc<Mutex<DSP>>, index: usize) -> Entity {
     let mut builder = EntityBuilder::new();
     let new_dsp = dsp.clone();
-    builder.add(Output::new(100, 100, new_dsp));
+    builder.add(Arc::new(Mutex::new(Output::new(100, 100, new_dsp, index))));
     let mut world = world.write();
     let entity = world.spawn(builder.build());
 
     println!("Spawned output: {}", entity.id());
-    // Json(entity)
     entity
 }
 
@@ -258,11 +318,11 @@ async fn handle_socket(mut socket: WebSocket, world: Arc<RwLock<World>>, dsp: Ar
                 Ok(msg) => {                                      // if the message is of type OK
                     match msg { // match the message
                         Message::Text(t) => {
-                            if t.len() > 1 {
+                            if t.len() > 10 {
                                 println!("Client is too chatty :(");
                                 return;
                             }
-                            entity_id = t.parse::<usize>().unwrap();
+                            entity_id = t.parse::<u64>().unwrap();
                         }
                         Message::Binary(_) => {
                             println!("Client sent binary data - we weren't expecting this");
@@ -294,14 +354,14 @@ async fn handle_socket(mut socket: WebSocket, world: Arc<RwLock<World>>, dsp: Ar
 
     println!("Got new frontend live view socket requesting view of output {}", entity_id);
     let socket = Arc::new(Mutex::new(socket));
-
     {
         let world_read = world.read();
-        unsafe{
-            let entity = world_read.find_entity_from_id(entity_id as u32);
-            let entity_return = world_read.get_mut::<Output>(entity);
+        let entity = Entity::from_bits(entity_id).unwrap();
+        {
+            let entity_return = world_read.get::<Arc<Mutex<Output>>>(entity);
             match entity_return {
-                Ok(mut output) => {
+                Ok(output) => {
+                    let mut output = output.lock();
                     output.add_websocket(socket);
                     output.enable();
                 },
@@ -310,6 +370,7 @@ async fn handle_socket(mut socket: WebSocket, world: Arc<RwLock<World>>, dsp: Ar
                     return;
                 }
             }
+
         }
     }
 

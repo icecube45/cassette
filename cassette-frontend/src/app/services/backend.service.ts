@@ -6,6 +6,7 @@ import { EFFECTS } from "../mock-effects";
 import { MIXER } from '../mock-mixers';
 import { Mixer } from "../mixer";
 import { Effect, EffectsWrapper } from "../effect";
+import { Output } from "../output";
 
 
 @Injectable({
@@ -18,33 +19,16 @@ export class BackendService {
 
 
     constructor(private http: HttpClient) { 
-        console.log("matrixLiveViewService");
+        console.log("backendService");
+    }
 
-        // this.socket.pipe(retry()).subscribe({ 
-        //     next: (msg) => {
-        //         // let new_pixels: Pixel[] = [];
-        //         // for(let pixel of msg) {
-        //         //     new_pixels.push(new Pixel(pixel.r, pixel.g, pixel.b, pixel.patched));
-        //         // }
-        //         // this.pixels_subject.next(new_pixels);
-        //     },
-        //     error: (err) => {
-        //         console.log(err);
-        //     },
-        //     complete: () => {
-        //         console.log("complete");
-        //     }
-        // });
-
-        // this.getPixels().subscribe(pixels => {
-        //     console.log("got new pixels - service");
-        // }
-        // );
+    public getOutputs() {
+        return this.http.get<Output[]>('http://'+window.location.hostname+':8080/api/outputs');
     }
 
     public getMixer(outputID: number, mixerID: number): Observable<Mixer> {
-        return of(MIXER);
-        return this.http.get<Mixer>(`/api/output/${outputID}/mixers/${mixerID}`);
+        // return of(MIXER);
+        return this.http.get<Mixer>('http://'+window.location.hostname+`:8080/api/output/+${outputID}/mixers/${mixerID}`);
     }
 
     public getEffects(outputID: number, channelID: number): Observable<EffectsWrapper> {

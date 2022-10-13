@@ -151,6 +151,6 @@ export class EffectEditorComponent implements OnInit {
     ) {}
   
     handleChangeComplete($event: ColorEvent) {
-        this.data.value = $event.color.hex;
+        this.data.color_value = $event.color.hex;
     }
   }

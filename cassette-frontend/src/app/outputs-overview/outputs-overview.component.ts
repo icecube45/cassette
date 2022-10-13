@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Output } from '../output';
-import { OUTPUTS } from '../mock-outputs';
+import { BackendService } from 'src/app/services/backend.service';
+
 import { Router } from '@angular/router'; 
 
 @Component({
@@ -10,10 +11,10 @@ import { Router } from '@angular/router';
 })
 export class OutputsOverviewComponent implements OnInit {
 
-    outputs = OUTPUTS;
-
-    constructor(private router: Router,) { }
-
+    
+    constructor(private router: Router, private backend: BackendService) { }
+    
+    outputs: Output[] = [];
 
     onConfigure(output: Output): void {
         console.log(`Configure ${output.name}`);
@@ -21,6 +22,9 @@ export class OutputsOverviewComponent implements OnInit {
     }
 
     ngOnInit(): void {
+        this.backend.getOutputs().subscribe(outputs => {
+            this.outputs = outputs
+        });
     }
 
 }

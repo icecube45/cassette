@@ -16,21 +16,21 @@ export const EFFECTS: EffectsWrapper =
                 <BooleanOption>{
                     id: 1,
                     name: 'Advance GIF on beat',
-                    type: EffectOptionType.Boolean,
-                    value: false
+                    option_type: EffectOptionType.Boolean,
+                    boolean_value: false
                 },
                 <SelectOption>{
                     id: 2,
                     name: 'Image',
-                    type: EffectOptionType.Select,
+                    option_type: EffectOptionType.Select,
                     options: ['https://substackcdn.com/image/fetch/f_auto,q_auto:good,fl_progressive:steep/https%3A%2F%2Fbucketeer-e05bbc84-baa3-437e-9518-adb32be77984.s3.amazonaws.com%2Fpublic%2Fimages%2F05b87bec-b910-4de7-b93a-f65327c20da9_960x648.png', 'https://ice45.link/9JPD.gif', 'https://ice45.link/0mcx.png', 'https://ice45.link/utZQ.png', 'https://ice45.link/9JPD.gif', 'https://ice45.link/0mcx.png', 'https://ice45.link/utZQ.png', 'https://ice45.link/9JPD.gif', 'https://ice45.link/0mcx.png', 'https://ice45.link/utZQ.png', 'https://ice45.link/9JPD.gif', 'https://ice45.link/0mcx.png', 'https://ice45.link/utZQ.png', 'https://ice45.link/9JPD.gif', 'https://ice45.link/0mcx.png', 'https://ice45.link/utZQ.png', 'https://ice45.link/9JPD.gif', 'https://ice45.link/0mcx.png', 'https://ice45.link/utZQ.png'],
-                    value: 'https://ice45.link/utZQ.png'
+                    select_value: 'https://ice45.link/utZQ.png'
                 },
                 <AnalogOption>{
                     id: 3,
                     name: 'Position X',
-                    type: EffectOptionType.Analog,
-                    value: 0,
+                    option_type: EffectOptionType.Analog,
+                    analog_value: 0,
                     min: 1,
                     max: 30,
                     step: 1
@@ -38,8 +38,8 @@ export const EFFECTS: EffectsWrapper =
                 <AnalogOption>{
                     id: 4,
                     name: 'Position Y',
-                    type: EffectOptionType.Analog,
-                    value: 0,
+                    option_type: EffectOptionType.Analog,
+                    analog_value: 0,
                     min: 1,
                     max: 30,
                     step: 1
@@ -47,8 +47,8 @@ export const EFFECTS: EffectsWrapper =
                 <AnalogOption>{
                     id: 5,
                     name: 'Scale',
-                    type: EffectOptionType.Analog,
-                    value: 1,
+                    option_type: EffectOptionType.Analog,
+                    analog_value: 1,
                     min: 0.1,
                     max: 5,
                     step: 0.1
@@ -65,29 +65,29 @@ export const EFFECTS: EffectsWrapper =
             <AnalogOption>{
                 id: 1,
                 name: 'Option 1',
-                type: EffectOptionType.Analog,
+                option_type: EffectOptionType.Analog,
                 min: 0,
                 max: 100,
-                value: 50
+                analog_value: 50
             },
             <BooleanOption>{
                 id: 2,
                 name: 'Option 2',
-                type: EffectOptionType.Boolean,
-                value: true
+                option_type: EffectOptionType.Boolean,
+                boolean_value: true
             },
             <ColorOption>{
                 id: 3,
                 name: 'Option 3',
-                type: EffectOptionType.Color,
-                value: '#ff0000'
+                option_type: EffectOptionType.Color,
+                color_value: '#ff0000'
             },
             <SelectOption>{
                 id: 4,
                 name: 'Option 4',
-                type: EffectOptionType.Select,
+                option_type: EffectOptionType.Select,
                 options: ['Option 1', 'Option 2', 'Option 3'],
-                value: 'Option 1'
+                select_value: 'Option 1'
             }
         ]
     },
@@ -98,29 +98,29 @@ export const EFFECTS: EffectsWrapper =
             <BooleanOption>{
                 id: 1,
                 name: 'Option 1',
-                type: EffectOptionType.Boolean,
-                value: false
+                option_type: EffectOptionType.Boolean,
+                boolean_value: false
             },
             <SelectOption>{
                 id: 2,
                 name: 'Option 2',
-                type: EffectOptionType.Select,
+                option_type: EffectOptionType.Select,
                 options: ['Option 19', 'Option 20', 'Option 32'],
-                value: 'Option 20'
+                select_value: 'Option 20'
             },
             <AnalogOption>{
                 id: 3,
                 name: 'Option 3',
-                type: EffectOptionType.Analog,
+                option_type: EffectOptionType.Analog,
                 min: 10,
                 max: 200,
-                value: 25
+                analog_value: 25
             },
             <ColorOption>{
                 id: 4,
                 name: 'Option 4',
-                type: EffectOptionType.Color,
-                value: '#bada55'
+                option_type: EffectOptionType.Color,
+                color_value: '#bada55'
             },
         ]
     },

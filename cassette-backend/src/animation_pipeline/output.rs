@@ -1,4 +1,4 @@
-use std::sync::{Arc};
+use std::{sync::{Arc}, default};
 use axum::extract::ws::{WebSocket, Message};
 use parking_lot::Mutex;
 
@@ -10,14 +10,19 @@ use crate::dsp::DSP;
 use super::{effect::{Animate, Effect}, mixer::{MixerComponent}, patcher::Patcher, frame::Frame};
 
 #[derive(Serialize)]
-pub struct EntityResponse {
-    id: u64
+pub struct ApiRepresentation {
+    pub id: u64,
+    pub name: String,
+    pub output_type: String,
+    pub active: bool,
+
 }
 
 pub struct Output {
     pub(crate) name: String,
     patcher: Patcher,
     enabled: bool,
+    output_type: String,
     width: u32,
     height: u32,
     dsp: Arc<Mutex<DSP>>,
@@ -29,18 +34,19 @@ pub struct Output {
     channelBCurrentEffectIndex: usize,
     channelCCurrentEffectIndex: usize,
     channelDCurrentEffectIndex: usize,
-    mixer1: MixerComponent,
-    mixer2: MixerComponent,
-    masterMixer: MixerComponent,
+    pub mixer1: MixerComponent,
+    pub mixer2: MixerComponent,
+    pub masterMixer: MixerComponent,
     display_websockets: Vec<Arc<Mutex<WebSocket>>>,
 
 }
 
 
 impl Output {
-    pub fn new(width: u32, height: u32, dsp: Arc<Mutex<DSP>>) -> Self {
+    pub fn new(width: u32, height: u32, dsp: Arc<Mutex<DSP>>, index: usize) -> Self {
         let mut out = Output {
             name: "unnamed".to_string(),
+            output_type: "matrix".to_string(),
             patcher: Patcher::new(),
             enabled: false,
             width: width,
@@ -51,12 +57,12 @@ impl Output {
             channelCEffects: Effect::new_effects_set(dsp.clone()),
             channelDEffects: Effect::new_effects_set(dsp.clone()),
             channelACurrentEffectIndex: 0,
-            channelBCurrentEffectIndex: 3,
+            channelBCurrentEffectIndex: index,
             channelCCurrentEffectIndex: 0,
             channelDCurrentEffectIndex: 0,
-            mixer1: MixerComponent::new(),
-            mixer2: MixerComponent::new(),
-            masterMixer: MixerComponent::new(),
+            mixer1: MixerComponent::new(1),
+            mixer2: MixerComponent::new(2),
+            masterMixer: MixerComponent::new(3),
             display_websockets: Vec::new()
 
         };
@@ -78,6 +84,20 @@ impl Output {
     pub fn enabled(&mut self) -> bool {
         return self.enabled;
     }
+
+    pub fn get_name(&mut self) -> String {
+        return self.name.clone();
+    }
+
+    pub fn get_output_type(&mut self) -> String {
+        return self.output_type.clone();
+    }
+
+    pub fn get_api_representation(&mut self) -> ApiRepresentation {
+        ApiRepresentation { id: 0, name: self.name.clone(), output_type: self.output_type.clone(), active: self.enabled }
+    }
+
+    
 
     pub fn process(&mut self) -> Frame{
         // TODO: maybe don't make a new frame each loop lmao

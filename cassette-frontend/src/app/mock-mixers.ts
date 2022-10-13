@@ -9,7 +9,7 @@ export const MIXER: Mixer =
     options: [
         <SelectOption>{
             id: 1,
-            type: EffectOptionType.Select,
+            option_type: EffectOptionType.Select,
             options: ['Progressive',
                         'Linear',
                         'Left Shape',
@@ -21,15 +21,15 @@ export const MIXER: Mixer =
                         'Left Overlay (Border)',
                         'Right Overlay (Border)'
                     ],
-            value: 'Progressive'
+            select_value: 'Progressive'
         },
         <AnalogOption>{
             id: 2,
             name: 'Weight',
-            type: EffectOptionType.Analog,
+            option_type: EffectOptionType.Analog,
             min: 0,
             max: 100,
-            value: 50
+            analog_value: 50
         }
     ]
 };

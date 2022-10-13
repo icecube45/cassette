@@ -1,6 +1,7 @@
 export interface Output {
     id: number;
     name: string;
-    type: string;
+    output_type: string;
     active: boolean;
 }
+

@@ -9,24 +9,24 @@ export enum EffectOptionType {
 export interface EffectOption {
     id: number;
     name: string;
-    type: EffectOptionType;
+    option_type: EffectOptionType;
 }
 
 export interface AnalogOption extends EffectOption {
     min: number;
     max: number;
-    value: number;
+    analog_value: number;
 }
 
 export interface BooleanOption extends EffectOption {
-    value: boolean;
+    boolean_value: boolean;
 }
 
 export interface ColorOption extends EffectOption {
-    value: string;
+    color_value: string;
 }
 
 export interface SelectOption extends EffectOption {
     options: string[];
-    value: string;
+    select_value: string;
 }
